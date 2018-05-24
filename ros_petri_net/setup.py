@@ -5,7 +5,7 @@ from catkin_pkg.python_setup import generate_distutils_setup
 
 # fetch values from package.xml
 setup_args = generate_distutils_setup(
-    packages=['rpn_common'],
+    packages=['rpn_common', 'rpn_gen', 'rpn_ros_interface', 'rpn_kb', 'rpn_execution'],
     package_dir={'': 'src'})
 
 setup(**setup_args)
