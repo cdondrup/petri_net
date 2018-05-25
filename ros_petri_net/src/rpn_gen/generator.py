@@ -23,10 +23,10 @@ class Generator(object):
         from rpn_ros_interface.action import Action as ROSAction
         cp, net = self.create_net(name, initial_knowledge=initial_knowledge)
         cp, net = self.add_action(
-            net, 
-            cp, 
+            net,
+            cp,
             ROSAction(
-                "dummy_server", 
+                "dummy_server",
                 recovery={
                     Action.PREEMPTED: "restart",
                     Action.FAILED: "fail"
