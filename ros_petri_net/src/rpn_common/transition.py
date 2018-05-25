@@ -1,4 +1,5 @@
 from pn_common import PNBaseObject
+import inspect
 
 
 class Arc(object):
@@ -22,8 +23,7 @@ class Transition(PNBaseObject):
         self.outgoing_arcs = outgoing_arcs
 
     def evaluate_condition(self):
-        # Do something with the condition
-        self.loginfo("Evaluating condition: '{}'".format(self.condition))
+        self.loginfo("Evaluating condition")
         try:
             return self.condition()
         except TypeError:
@@ -31,10 +31,9 @@ class Transition(PNBaseObject):
             return self.condition
 
     def execute_action(self):
-        # Do someething to start condition
         if self.action:
             self.loginfo("Executing action: '{}'".format(self.action))
-            self.action.start()
+            self.action.start(self.kb)
             self.loginfo("Action '{}' started.".format(self.action))
         else:
             self.loginfo("No action")

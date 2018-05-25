@@ -1,15 +1,23 @@
 from pn_common import PNBaseObject
+from rpn_kb.knowledgebase import KnowledgeBase
 import numpy as np
 
 
 class PetriNet(PNBaseObject):
-    def __init__(self, name):
+    def __init__(self, name, initial_knowledge = None):
         super(PetriNet, self).__init__(name)
         self._transitions = []
         self._places = []
         self._d_minus = None
         self._d_plus = None
         self._d = None
+        if initial_knowledge is not None:
+            if isinstance(initial_knowledge, dict):
+                self.kb = KnowledgeBase(**initial_knowledge)
+            else:
+                raise TypeError("Initial knowledge has to be of type dict")
+        else:
+            self.kb = KnowledgeBase()
 
     def get_current_places(self, marking):
         res = [[], []]
@@ -18,11 +26,36 @@ class PetriNet(PNBaseObject):
             res[1].append(m)
         return res
 
-    def is_finished(self, marking):
+    # def is_finished(self, marking):
+        # for p in self.get_current_places(marking)[0]:
+            # if p != "Goal":
+                # return False
+        # return True
+
+    def is_goal(self, marking, any=False):
+        return self.is_place(marking, "Goal", any)
+
+    def is_fail(self, marking, any=False):
+        return self.is_place(marking, "Fail", any)
+
+    def is_place(self, marking, name, any=False):
         for p in self.get_current_places(marking)[0]:
-            if p != "Goal":
+            if any:
+                return self.check_any_places(marking, name)
+            else:
+                return self.check_all_places(marking, name)
+
+    def check_all_places(self, marking, name):
+        for p in self.get_current_places(marking)[0]:
+            if p != name:
                 return False
         return True
+
+    def check_any_places(self, marking, name):
+        for p in self.get_current_places(marking)[0]:
+            if p == name:
+                return True
+        return False
 
     @property
     def d_minus(self):
@@ -71,9 +104,11 @@ class PetriNet(PNBaseObject):
                         "net. It cannot be set.")
 
     def add_transition(self, transition):
+        transition.add_kb(self.kb)
         self._transitions.append(transition)
 
     def add_place(self, place):
+        place.add_kb(self.kb)
         self._places.append(place)
 
     @property

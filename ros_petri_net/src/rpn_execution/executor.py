@@ -29,13 +29,13 @@ class Executor(object):
             print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
             print "[{}] Current marking:".format(net_id), marking
             print "[{}] Current places:".format(net_id), net.get_current_places(marking)
-            if net.is_finished(marking):
-                break
             rospy.sleep(.1)
             # raw_input()
             print "[{}] Checking transitions.".format(net_id)
             trans = self.check_num_tokens(marking, net.d_minus)
             print "[{}] Transitions that should fire based on tokens:".format(net_id), trans
+            if np.sum(trans) == 0:
+                break
             trans = self.check_conditions(trans, net.transitions)
             print "[{}] Transitions fiering based on condition:".format(net_id), trans
             print "[{}] Execute associated actions".format(net_id)
@@ -43,7 +43,10 @@ class Executor(object):
             marking = np.matmul(trans, net.d) + marking
             print "[{}] Monitoring actions".format(net_id)
             self.monitor_actions(marking, net.places)
-        rospy.loginfo("Finished '{}'.".format(net_id))
+        if net.is_goal(marking):
+            rospy.loginfo("Finished '{}' successfully.".format(net_id))
+        elif net.is_fail(marking):
+            rospy.loginfo("Finished '{}' unsuccessfully.".format(net_id))
 
     def check_num_tokens(self, marking, d_minus):
         trans = np.zeros(d_minus.shape[0], dtype=int)

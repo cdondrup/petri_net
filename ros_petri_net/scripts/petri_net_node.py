@@ -10,9 +10,8 @@ class PetriNetNode(object):
     def __init__(self, name):
         rospy.loginfo("Starting '{}' ...".format(name))
         exe = Executor()
-        exe.execute_net(exe.add_net(*Generator().test("test_net_1")))
-        # exe.execute_net(exe.add_net(*Generator().test("test_net_3")))
-        # exe.execute_net(exe.add_net(*Generator().test("test_net_2")))
+        exe.execute_net(exe.add_net(*Generator().test("test_net_1", {"value": 3})))
+        exe.execute_net(exe.add_net(*Generator().test("test_net_2", {"value": 4})))
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 from rpn_common.transition import Transition, Arc
 from rpn_common.place import Place
 from rpn_common.petri_net import PetriNet
-from rpn_ros_interface.action import Action
+from rpn_common.action import Action
+from rpn_kb.knowledgebase import KnowledgeBase
 from pprint import pprint
 import numpy as np
 
@@ -14,23 +15,34 @@ class Generator(object):
     D = "d"
 
     def __init__(self):
+        self.__kb = KnowledgeBase()
         self.__place_counter = 0
         self.__trans_counter = 0
 
-    def test(self, name):
-        cp, net = self.create_net(name)
-        # cp, net = self.add_action(net, cp, "action_1")
-        # cp, net = self.add_action(net, cp, "action_2")
+    def test(self, name, initial_knowledge):
+        from rpn_ros_interface.action import Action as ROSAction
+        cp, net = self.create_net(name, initial_knowledge=initial_knowledge)
+        cp, net = self.add_action(
+            net, 
+            cp, 
+            ROSAction(
+                "dummy_server", 
+                recovery={
+                    Action.PREEMPTED: "restart",
+                    Action.FAILED: "fail"
+                }
+            )
+        )
         cp, net = self.add_concurrent_actions(
             net,
             cp,
             [
                 [
-                    Action("wait", {"time": 5}),
-                    Action("wait", {"time": 6})
+                    ROSAction("wait", {"time": 5}),
+                    ROSAction("wait", {"time": 6})
                 ],
-                Action("wait", {"time": 3}),
-                Action("wait", {"time": 4})
+                ROSAction("wait"),
+                ROSAction("wait")
             ]
         )
         cp, net = self.add_goal(net, cp)
@@ -40,9 +52,9 @@ class Generator(object):
         return net, marking
 
 
-    def create_net(self, name):
+    def create_net(self, name, initial_knowledge=None):
         p = Place("Init")
-        net = PetriNet(name)
+        net = PetriNet(name, initial_knowledge=initial_knowledge)
         net.add_place(p)
 
         return p, net
@@ -74,16 +86,24 @@ class Generator(object):
             )
         )
 
-        p2 = self.create_place(name=action.name+".succeeded")
+        p2 = self.create_place(name=action.name+".finished")
         net.add_place(p2)
-        net.add_transition(
-            self.create_transition(
-                name=action.name+".end",
-                condition=lambda: action.succeeded,
-                incoming_arcs=[Arc(place=p)],
-                outgoing_arcs=[Arc(place=p2)]
+        for outcome, recovery in action.recovery.items():
+            if recovery == "fail":
+                pr = self.create_place(name="Fail")
+                net.add_place(pr)
+            elif recovery == "restart":
+                pr = current_place
+            else:
+                pr = p2
+            net.add_transition(
+                self.create_transition(
+                    name=action.name+"."+outcome,
+                    condition=(lambda x: lambda: getattr(action, x))(outcome),
+                    incoming_arcs=[Arc(place=p)],
+                    outgoing_arcs=[Arc(place=pr)]
+                )
             )
-        )
 
         return p2, net
 

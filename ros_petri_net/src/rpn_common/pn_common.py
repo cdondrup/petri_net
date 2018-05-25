@@ -7,6 +7,10 @@ class PNBaseObject(object):
     def __init__(self, name):
         self.name = name
         self.id = str(uuid.uuid4())
+        self.kb = None
+
+    def add_kb(self, kb):
+        self.kb = kb
 
     def loginfo(self, text):
         rospy.loginfo(self.name + ': ' + text)

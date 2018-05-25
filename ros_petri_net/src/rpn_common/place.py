@@ -9,8 +9,8 @@ class Place(PNBaseObject):
     def monitor_action(self):
         if self.action:
             self.loginfo("Monitoring action: '{}'".format(self.action))
-            self.action.monitor()
-            self.loginfo("Action '{}' finished".format(self.action))
+            self.action.monitor(self.kb)
+            # self.loginfo("Action '{}' finished".format(self.action))
         else:
             self.loginfo("No action")
         return
