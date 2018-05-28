@@ -38,11 +38,11 @@ class Executor(object):
                 break
             trans = self.check_conditions(trans, net.transitions)
             print "[{}] Transitions fiering based on condition:".format(net_id), trans
-            print "[{}] Execute associated actions".format(net_id)
-            self.execute_actions(trans, net.transitions)
+            print "[{}] Execute associated atomic_actions".format(net_id)
+            self.execute_atomic_actions(trans, net.transitions)
             marking = np.matmul(trans, net.d) + marking
-            print "[{}] Monitoring actions".format(net_id)
-            self.monitor_actions(marking, net.places)
+            print "[{}] Monitoring atomic_actions".format(net_id)
+            self.monitor_atomic_actions(marking, net.places)
         if net.is_goal(marking):
             rospy.loginfo("Finished '{}' successfully.".format(net_id))
         elif net.is_fail(marking):
@@ -62,11 +62,11 @@ class Executor(object):
                     res[idx] = 1
         return res
 
-    def execute_actions(self, trans, transitions):
+    def execute_atomic_actions(self, trans, transitions):
         for t in np.array(transitions)[trans == 1]:
-            t.execute_action()
+            t.execute_atomic_action()
 
-    def monitor_actions(self, marking, places):
+    def monitor_atomic_actions(self, marking, places):
         for p in np.array(places)[marking >= 1]:
-            p.monitor_action()
+            p.monitor_atomic_action()
 

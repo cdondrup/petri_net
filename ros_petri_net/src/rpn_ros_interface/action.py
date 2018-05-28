@@ -5,12 +5,12 @@ from actionlib import ActionClient
 from actionlib_msgs.msg import GoalStatus
 from threading import Lock, Thread
 from rpn_kb.knowledgebase import KnowledgeBase
-from rpn_common.action import Action as PNAction
+from rpn_actions.atomic_action import AtomicAction
 
 
-class Action(PNAction):
+class ROSAtomicAction(AtomicAction):
     def __init__(self, name, params=None, recovery=None):
-        super(Action, self).__init__(name, params, recovery)
+        super(ROSAtomicAction, self).__init__(name, params, recovery)
         self.lock = Lock()
         self.g = None
         self.monitor_thread = None
