@@ -32,15 +32,15 @@ class AtomicAction(object):
     @property
     @abstractmethod
     def succeeded(self):
-        return
+        return True
 
     @property
     @abstractmethod
     def preempted(self):
-        return
+        return True
 
     @property
     @abstractmethod
     def failed(self):
-        return
+        return True
 

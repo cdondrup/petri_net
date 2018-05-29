@@ -11,11 +11,11 @@ class PetriNetNode(object):
         rospy.loginfo("Starting '{}' ...".format(name))
         exe = Executor()
         exe.execute_net(exe.add_net(*Generator().test("test_net_1", {"value": 3})))
-        exe.execute_net(exe.add_net(*Generator().test("test_net_2", {"value": 4})))
+        # exe.execute_net(exe.add_net(*Generator().test("test_net_2", {"value": 4})))
 
 
 if __name__ == "__main__":
     rospy.init_node("ros_petri_net_node")
     p = PetriNetNode(rospy.get_name())
-    rospy.spin()
+    # rospy.spin()
 

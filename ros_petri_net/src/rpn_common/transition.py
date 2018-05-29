@@ -19,8 +19,8 @@ class Transition(PNBaseObject):
         super(Transition, self).__init__(name)
         self.condition = condition
         self.atomic_action = atomic_action
-        self.incoming_arcs = incoming_arcs
-        self.outgoing_arcs = outgoing_arcs
+        self.incoming_arcs = incoming_arcs if incoming_arcs is not None else []
+        self.outgoing_arcs = outgoing_arcs if outgoing_arcs is not None else []
 
     def evaluate_condition(self):
         self.loginfo("Evaluating condition")

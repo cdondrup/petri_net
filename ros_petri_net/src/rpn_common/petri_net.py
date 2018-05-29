@@ -111,6 +111,10 @@ class PetriNet(PNBaseObject):
         place.add_kb(self.kb)
         self._places.append(place)
 
+    def add_init_place(self, place):
+        self.add_place(place)
+        self.init_place = place
+
     @property
     def transitions(self):
         return np.array(self._transitions)
