@@ -2,6 +2,7 @@ import rospy
 import numpy as np
 from threading import Thread
 import uuid
+from pprint import pprint
 
 
 class Executor(object):
@@ -34,10 +35,12 @@ class Executor(object):
             print "[{}] Checking transitions.".format(net_id)
             trans = self.check_num_tokens(marking, net.d_minus)
             print "[{}] Transitions that should fire based on tokens:".format(net_id), trans
+            pprint(net.get_current_transitions(trans))
             if np.sum(trans) == 0:
                 break
             trans = self.check_conditions(trans, net.transitions)
             print "[{}] Transitions fiering based on condition:".format(net_id), trans
+            pprint(net.get_current_transitions(trans))
             print "[{}] Execute associated atomic_actions".format(net_id)
             self.execute_atomic_actions(trans, net.transitions)
             marking = np.matmul(trans, net.d) + marking

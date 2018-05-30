@@ -9,7 +9,7 @@ class KnowledgeBase(object):
                 self.update(k, v)
 
     def query(self, variable):
-        return getattr(self, variable, None)
+        return getattr(self, variable)
 
     def update(self, variable, value):
         setattr(self, variable, value)
@@ -20,4 +20,8 @@ class KnowledgeBase(object):
 
     def __getattr__(self, name):
         with self.lock:
-            return self.__dict__["_mutex_"+name]
+            try:
+                return self.__dict__["_mutex_"+name]
+            except KeyError as e:
+                raise e
+

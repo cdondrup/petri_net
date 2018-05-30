@@ -26,6 +26,9 @@ class PetriNet(PNBaseObject):
             res[1].append(m)
         return res
 
+    def get_current_transitions(self, trans):
+        return self.transitions[trans >= 1.]
+
     # def is_finished(self, marking):
         # for p in self.get_current_places(marking)[0]:
             # if p != "Goal":

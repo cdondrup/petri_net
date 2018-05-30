@@ -3,7 +3,7 @@ from rpn_common.place import Place
 from rpn_common.petri_net import PetriNet
 from rpn_actions.atomic_action import AtomicAction
 from rpn_actions.pn_action import PNAction
-from rpn_actions.recovery import Recovery, During, Before, After, Check
+from rpn_actions.recovery import Recovery, During, Before, After, Check, BooleanTest
 from rpn_kb.knowledgebase import KnowledgeBase
 from pprint import pprint
 import numpy as np
@@ -27,11 +27,12 @@ class Generator(object):
         a1 = PNAction(
             atomic_action=ROSAction("dummy_server"),
             recovery=Recovery(
-                before=Before(Check("time", "__eq__", 3, Recovery.SKIP_ACTION)),
+                before=Before(BooleanTest(Check("time", "eq", 3), True), Recovery.SKIP_ACTION),
                 during=During(
                     preempted=Recovery.RESTART_PLAN,
                     failed=Recovery.FAIL
-                )
+                ),
+                after=After(BooleanTest(Check("time", "eq", "value"), False), Recovery.RESTART_ACTION)
             )
         )
         a21 = PNAction(ROSAction("wait"))
@@ -70,8 +71,12 @@ class Generator(object):
                           outgoing_arcs=outgoing_arcs, condition=condition)
 
     def add_action(self, net, current_place, action):
-        action.apply_recovery_behaviours(net, current_place)
-        action.starting_transition.incoming_arcs = [Arc(place=current_place)]
+        action.apply_recovery_behaviours(net)
+        net.add_transition(self.create_transition(
+            incoming_arcs=[Arc(place=current_place)],
+            outgoing_arcs=[Arc(place=action.start_place)]
+        ))
+        # action.start_transition.incoming_arcs = [Arc(place=current_place)]
         for p in action.places:
             net.add_place(p)
         for t in action.transitions:

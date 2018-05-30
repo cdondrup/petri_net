@@ -1,5 +1,6 @@
 from pn_common import PNBaseObject
 import inspect
+# from rpn_actions.recovery import Check, Test
 
 
 class Arc(object):
@@ -15,15 +16,18 @@ class Arc(object):
 
 
 class Transition(PNBaseObject):
-    def __init__(self, name, incoming_arcs=None, outgoing_arcs=None, condition=True, atomic_action=None):
+    def __init__(self, name, incoming_arcs=None, outgoing_arcs=None, condition=True, atomic_action=None, query=None):
         super(Transition, self).__init__(name)
         self.condition = condition
         self.atomic_action = atomic_action
+        self.query = query
         self.incoming_arcs = incoming_arcs if incoming_arcs is not None else []
         self.outgoing_arcs = outgoing_arcs if outgoing_arcs is not None else []
 
     def evaluate_condition(self):
         self.loginfo("Evaluating condition")
+        if self.query is not None:
+            return self.query.test(self.kb) == self.query.truth_value
         try:
             return self.condition()
         except TypeError:
@@ -41,6 +45,7 @@ class Transition(PNBaseObject):
 
     def __str__(self):
         return "((" + self.name + ((", atomic_action: " + str(self.atomic_action)) if self.atomic_action else "") + \
+                ((", query: " + str(self.query)) if self.query else "") + \
                 ", incoming: [" + ', '.join([str(x) for x in self.incoming_arcs]) + "], outgoing: [" + \
                 ', '.join([str(x) for x in self.outgoing_arcs]) + "]" + ", condition: " + str(self.condition)  + "))"
 
