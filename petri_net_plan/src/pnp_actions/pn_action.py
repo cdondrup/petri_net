@@ -26,30 +26,50 @@ class PNAction(object):
             outgoing_arcs=[Arc(place=self.exec_place)]
         )]
 
-    # def add_starting_place(self, place):
-        # self.start_transition = self.start_transition if isinstance(self.start_transition,
-                                                                          # list) else [self.start_transition]
-        # for t in self.start_transition:
-            # t.incoming_arcs = [Arc(place=place)]
+    def set_up(self, *args, **kwargs):
+        if "net" in kwargs:
+            self.apply_recovery_behaviours(kwargs["net"])
+        else:
+            self.apply_recovery_behaviours(args[0])
 
     def apply_recovery_behaviours(self, net):
         # During
-        for o, r in self.recovery.during.items():
-            if r == Recovery.RESTART_ACTION:
-                pr = self.start_place
-            elif r == Recovery.RESTART_PLAN:
-                pr = net.init_place
-            elif r == Recovery.FAIL:
-                pr = Place("Fail")
-                self.places.append(pr)
-            elif r is None:
-                pr = self.end_place
-            self.transitions.append(Transition(
+        for o, rs in self.recovery.during.items():
+            # print o, rs
+            t = Transition(
                 name=self.atomic_action.name+"."+o,
                 condition=(lambda x: lambda: getattr(self.atomic_action, x))(o),
-                incoming_arcs=[Arc(place=self.exec_place)],
-                outgoing_arcs=[Arc(place=pr)]
-            ))
+                incoming_arcs=[Arc(place=self.exec_place)]
+            )
+
+            for i, r in enumerate(rs):
+                if r == Recovery.RESTART_ACTION:
+                    t.outgoing_arcs = [Arc(place=self.start_place)]
+                elif r == Recovery.RESTART_PLAN:
+                    t.outgoing_arcs = [Arc(place=net.init_place)]
+                elif r == Recovery.FAIL:
+                    fail = Place("Fail")
+                    t.outgoing_arcs = [Arc(place=fail)]
+                    self.places.append(fail)
+                elif r in (None, Recovery.SKIP_ACTION):
+                    t.outgoing_arcs = [Arc(place=self.end_place)]
+                elif isinstance(r, PNAction):
+                    print "---"
+                    r.set_up(net)
+                    print t
+                    t.outgoing_arcs = [Arc(place=r.start_place)]
+                    print t
+                    self.transitions.append(t)
+                    t = Transition(
+                        name=self.atomic_action.name+".T."+o+str(i),
+                        incoming_arcs=[Arc(place=r.end_place)],
+                    )
+                    print t
+                    self.places.extend(r.places)
+                    self.transitions.extend(r.transitions)
+                    continue
+                print "+++", t
+                self.transitions.append(t)
 
         # Before
         for i, b in enumerate(self.recovery.before):
@@ -68,12 +88,12 @@ class PNAction(object):
                 raise AttributeError("Recovery '{}' is not supported as 'before' recovery".format(r))
 
             self.transitions.append(Transition(
-                name=self.atomic_action.name+".T.before{}.{}".format(str(i), str(b.boolean_test.truth_value)),
-                query=b.boolean_test,
+                name=self.atomic_action.name+".T.before{}.{}".format(str(i), str(b.assertion.truth_value)),
+                query=b.assertion,
                 incoming_arcs=[Arc(place=p)],
                 outgoing_arcs=[Arc(place=pr)]
             ))
-            inverse_bt = deepcopy(b.boolean_test)
+            inverse_bt = deepcopy(b.assertion)
             inverse_bt.invert()
             self.transitions.append(Transition(
                 name=self.atomic_action.name+".T.before{}.{}".format(str(i), str(inverse_bt.truth_value)),
@@ -100,12 +120,12 @@ class PNAction(object):
                 raise AttributeError("Recovery '{}' is not supported as 'after' recovery".format(r))
 
             self.transitions.append(Transition(
-                name=self.atomic_action.name+".T.after{}.{}".format(str(i), str(a.boolean_test.truth_value)),
-                query=a.boolean_test,
+                name=self.atomic_action.name+".T.after{}.{}".format(str(i), str(a.assertion.truth_value)),
+                query=a.assertion,
                 incoming_arcs=[Arc(place=self.end_place)],
                 outgoing_arcs=[Arc(place=pr)]
             ))
-            inverse_at = deepcopy(a.boolean_test)
+            inverse_at = deepcopy(a.assertion)
             inverse_at.invert()
             self.transitions.append(Transition(
                 name=self.atomic_action.name+".T.after{}.{}".format(str(i), str(inverse_at.truth_value)),

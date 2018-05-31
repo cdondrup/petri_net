@@ -3,7 +3,8 @@ from pnp_common.place import Place
 from pnp_common.petri_net import PetriNet
 from pnp_actions.atomic_action import AtomicAction
 from pnp_actions.pn_action import PNAction
-from pnp_actions.recovery import Recovery, During, Before, After, Check, BooleanTest
+from pnp_actions.recovery import Recovery, During, Before, After
+from pnp_actions.queries import Comparison, BooleanAssertion
 from pnp_kb.knowledgebase import KnowledgeBase
 from pprint import pprint
 import numpy as np
@@ -21,9 +22,9 @@ class Generator(object):
         self.__place_counter = 0
         self.__trans_counter = 0
 
-    def create_net(self, name, initial_knowledge=None):
+    def create_net(self, name, external_kb, initial_knowledge=None):
         p = Place("Init")
-        net = PetriNet(name, initial_knowledge=initial_knowledge)
+        net = PetriNet(name, external_kb=external_kb, initial_knowledge=initial_knowledge)
         net.add_init_place(p)
 
         return p, net
@@ -44,12 +45,12 @@ class Generator(object):
                           outgoing_arcs=outgoing_arcs, condition=condition)
 
     def add_action(self, net, current_place, action):
-        action.apply_recovery_behaviours(net)
+        action.set_up(net)
         net.add_transition(self.create_transition(
             incoming_arcs=[Arc(place=current_place)],
             outgoing_arcs=[Arc(place=action.start_place)]
         ))
-        # action.start_transition.incoming_arcs = [Arc(place=current_place)]
+
         for p in action.places:
             net.add_place(p)
         for t in action.transitions:

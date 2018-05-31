@@ -1,6 +1,6 @@
 from pn_common import PNBaseObject
 import inspect
-# from pnp_actions.recovery import Check, Test
+# from pnp_actions.recovery import Comparison, Test
 
 
 class Arc(object):
@@ -27,7 +27,7 @@ class Transition(PNBaseObject):
     def evaluate_condition(self):
         self.loginfo("Evaluating condition")
         if self.query is not None:
-            return self.query.test(self.kb) == self.query.truth_value
+            return self.query(self.kb, self.external_kb)
         try:
             return self.condition()
         except TypeError:
@@ -37,7 +37,7 @@ class Transition(PNBaseObject):
     def execute_atomic_action(self):
         if self.atomic_action:
             self.loginfo("Executing atomic_action: '{}'".format(self.atomic_action))
-            self.atomic_action.start(self.kb)
+            self.atomic_action.start(self.kb, self.external_kb)
             self.loginfo("Action '{}' started.".format(self.atomic_action))
         else:
             self.loginfo("No atomic_action")

@@ -8,9 +8,11 @@ class PNBaseObject(object):
         self.name = name
         self.id = str(uuid.uuid4())
         self.kb = None
+        self.external_kb = None
 
-    def add_kb(self, kb):
+    def add_kb(self, kb, external_kb):
         self.kb = kb
+        self.external_kb = external_kb
 
     def loginfo(self, text):
         rospy.loginfo(self.name + ': ' + text)

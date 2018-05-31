@@ -4,8 +4,9 @@ import numpy as np
 
 
 class PetriNet(PNBaseObject):
-    def __init__(self, name, initial_knowledge = None):
+    def __init__(self, name, external_kb, initial_knowledge = None):
         super(PetriNet, self).__init__(name)
+        self.external_kb = external_kb(self.id)
         self._transitions = []
         self._places = []
         self._d_minus = None
@@ -28,12 +29,6 @@ class PetriNet(PNBaseObject):
 
     def get_current_transitions(self, trans):
         return self.transitions[trans >= 1.]
-
-    # def is_finished(self, marking):
-        # for p in self.get_current_places(marking)[0]:
-            # if p != "Goal":
-                # return False
-        # return True
 
     def is_goal(self, marking, any=False):
         return self.is_place(marking, "Goal", any)
@@ -107,11 +102,11 @@ class PetriNet(PNBaseObject):
                         "net. It cannot be set.")
 
     def add_transition(self, transition):
-        transition.add_kb(self.kb)
+        transition.add_kb(self.kb, self.external_kb)
         self._transitions.append(transition)
 
     def add_place(self, place):
-        place.add_kb(self.kb)
+        place.add_kb(self.kb, self.external_kb)
         self._places.append(place)
 
     def add_init_place(self, place):

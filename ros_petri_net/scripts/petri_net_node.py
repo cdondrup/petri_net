@@ -9,28 +9,39 @@ class PetriNetNode(object):
     def __init__(self, name):
         rospy.loginfo("Starting '{}' ...".format(name))
         exe = Executor()
-        exe.execute_net(exe.add_net(*self.test("test_net_1", {"value": 3, "time": 1})))
+        exe.execute_net(exe.add_net(*self.test("test_net_1", {"value": 3})))
         # exe.execute_net(exe.add_net(*Generator().test("test_net_2", {"value": 4})))
 
     def test(self, name, initial_knowledge):
         from rpn_ros_interface.action import ROSAtomicAction as ROSAction
+        from rpn_ros_interface.ros_external_knowledge_base import ROSExternalKnowledgeBase as ROSKB
         from pnp_gen.generator import Generator
         from pnp_actions.pn_action import PNAction
-        from pnp_actions.recovery import Recovery, Before, During, After, BooleanTest, Check
+        from pnp_actions.recovery import Recovery, Before, During, After
+        from pnp_actions.queries import BooleanAssertion, Comparison, LocalQuery, RemoteQuery, Query
         from pprint import pprint
         import numpy as np
 
         gen = Generator()
-        cp, net = gen.create_net(name, initial_knowledge=initial_knowledge)
+        cp, net = gen.create_net(name, ROSKB, initial_knowledge=initial_knowledge)
         a1 = PNAction(
             atomic_action=ROSAction("dummy_server"),
             recovery=Recovery(
-                before=Before(BooleanTest(Check("time", "eq", 3), True), Recovery.SKIP_ACTION),
+                before=Before(BooleanAssertion(Comparison("eq", [Query("time"), 3]), True), Recovery.SKIP_ACTION),
                 during=During(
-                    preempted=Recovery.RESTART_PLAN,
+                    preempted=[
+                        PNAction(
+                            ROSAction("dummy_server"),
+                            recovery=Recovery(during=During(
+                                preempted=[PNAction(ROSAction("wait", {"time": 2})), Recovery.SKIP_ACTION]
+                            )
+                        )),
+                        Recovery.SKIP_ACTION
+                    ],
                     failed=Recovery.FAIL
                 ),
-                after=After(BooleanTest(Check("time", "eq", "value"), False), Recovery.RESTART_ACTION)
+                after=After(BooleanAssertion(Comparison("eq", [LocalQuery("time"),
+                                                        LocalQuery("value")]), False), Recovery.RESTART_ACTION)
             )
         )
         a21 = PNAction(ROSAction("wait"))

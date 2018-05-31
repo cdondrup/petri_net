@@ -1,7 +1,8 @@
+from abstract_knowledgebase import AbstractKnowledgeBase
 from threading import Lock
 
 
-class KnowledgeBase(object):
+class KnowledgeBase(AbstractKnowledgeBase):
     def __init__(self, **kwargs):
         self.__dict__["lock"] = Lock()
         if kwargs is not None:
@@ -23,5 +24,5 @@ class KnowledgeBase(object):
             try:
                 return self.__dict__["_mutex_"+name]
             except KeyError as e:
-                raise e
+                return None
 

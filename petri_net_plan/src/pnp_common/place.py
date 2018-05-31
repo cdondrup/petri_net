@@ -9,8 +9,7 @@ class Place(PNBaseObject):
     def monitor_atomic_action(self):
         if self.atomic_action:
             self.loginfo("Monitoring atomic_action: '{}'".format(self.atomic_action))
-            self.atomic_action.monitor(self.kb)
-            # self.loginfo("Action '{}' finished".format(self.atomic_action))
+            self.atomic_action.monitor(self.kb, self.external_kb)
         else:
             self.loginfo("No atomic_action")
         return
@@ -20,6 +19,4 @@ class Place(PNBaseObject):
 
     def __repr__(self):
         return self.__str__()
-        # from pprint import pformat
-        # return pformat(vars(self), indent=0, width=2)
 

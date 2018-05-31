@@ -9,8 +9,8 @@ from pnp_actions.atomic_action import AtomicAction
 
 
 class ROSAtomicAction(AtomicAction):
-    def __init__(self, name, params=None, recovery=None):
-        super(ROSAtomicAction, self).__init__(name, params, recovery)
+    def __init__(self, name, params=None):
+        super(ROSAtomicAction, self).__init__(name, params)
         self.lock = Lock()
         self.g = None
         self.monitor_thread = None
@@ -39,7 +39,7 @@ class ROSAtomicAction(AtomicAction):
             self.client.wait_for_server()
             self.g = self.client.send_goal(goal)
 
-    def start(self, kb):
+    def start(self, kb, external_kb):
         if self.server_thread is None or not self.server_thread.is_alive():
             self.server_thread = Thread(target=self.call_server, args=(kb,))
             self.server_thread.start()
@@ -55,7 +55,7 @@ class ROSAtomicAction(AtomicAction):
                         res = getattr(result,slot)
                         kb.update(slot, res)
 
-    def monitor(self, kb):
+    def monitor(self, kb, external_kb):
         if self.monitor_thread is None or not self.monitor_thread.is_alive():
             self.monitor_thread = Thread(target=self.wait_for_action, args=(kb,))
             self.monitor_thread.start()
