@@ -1,6 +1,6 @@
 from pn_common import PNBaseObject
 import inspect
-# from rpn_actions.recovery import Check, Test
+# from pnp_actions.recovery import Check, Test
 
 
 class Arc(object):

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(petri_net_plan)
+project(ros_petri_net)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,6 +8,12 @@ project(petri_net_plan)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  message_generation
+  message_runtime
+  rospy
+  std_msgs
+  actionlib
+  actionlib_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -58,17 +64,17 @@ catkin_python_setup()
 # )
 
 ## Generate actions in the 'action' folder
- #add_action_files(
-   #FILES
-   #Wait.action
-   #Dummy.action
- #)
+ add_action_files(
+   FILES
+   Wait.action
+   Dummy.action
+ )
 
 ## Generate added messages and services with any dependencies listed here
- #generate_messages(
-   #DEPENDENCIES
-   #std_msgs actionlib_msgs
- #)
+ generate_messages(
+   DEPENDENCIES
+   std_msgs actionlib_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##

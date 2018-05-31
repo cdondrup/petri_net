@@ -1,5 +1,5 @@
 from pn_common import PNBaseObject
-from rpn_kb.knowledgebase import KnowledgeBase
+from pnp_kb.knowledgebase import KnowledgeBase
 import numpy as np
 
 

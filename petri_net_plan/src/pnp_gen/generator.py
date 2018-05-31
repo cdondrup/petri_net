@@ -1,10 +1,10 @@
-from rpn_common.transition import Transition, Arc
-from rpn_common.place import Place
-from rpn_common.petri_net import PetriNet
-from rpn_actions.atomic_action import AtomicAction
-from rpn_actions.pn_action import PNAction
-from rpn_actions.recovery import Recovery, During, Before, After, Check, BooleanTest
-from rpn_kb.knowledgebase import KnowledgeBase
+from pnp_common.transition import Transition, Arc
+from pnp_common.place import Place
+from pnp_common.petri_net import PetriNet
+from pnp_actions.atomic_action import AtomicAction
+from pnp_actions.pn_action import PNAction
+from pnp_actions.recovery import Recovery, During, Before, After, Check, BooleanTest
+from pnp_kb.knowledgebase import KnowledgeBase
 from pprint import pprint
 import numpy as np
 
@@ -20,33 +20,6 @@ class Generator(object):
         self.__kb = KnowledgeBase()
         self.__place_counter = 0
         self.__trans_counter = 0
-
-    def test(self, name, initial_knowledge):
-        from rpn_ros_interface.action import ROSAtomicAction as ROSAction
-        cp, net = self.create_net(name, initial_knowledge=initial_knowledge)
-        a1 = PNAction(
-            atomic_action=ROSAction("dummy_server"),
-            recovery=Recovery(
-                before=Before(BooleanTest(Check("time", "eq", 3), True), Recovery.SKIP_ACTION),
-                during=During(
-                    preempted=Recovery.RESTART_PLAN,
-                    failed=Recovery.FAIL
-                ),
-                after=After(BooleanTest(Check("time", "eq", "value"), False), Recovery.RESTART_ACTION)
-            )
-        )
-        a21 = PNAction(ROSAction("wait"))
-        a22 = PNAction(ROSAction("wait"))
-        a31 = PNAction(ROSAction("wait", {"time": 5}))
-        a32 = PNAction(ROSAction("wait", {"time": 6}))
-        cp, net = self.add_action(net, cp, a1)
-        cp, net = self.add_concurrent_actions(net, cp, [[a31, a32], a21, a22])
-        cp, net = self.add_goal(net, cp)
-        pprint(net)
-        marking = np.zeros(net.num_places, dtype=int)
-        marking[0] = 1
-        return net, marking
-
 
     def create_net(self, name, initial_knowledge=None):
         p = Place("Init")

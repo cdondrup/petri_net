@@ -1,8 +1,8 @@
 # from abc import ABCMeta, abstractmethod
 from uuid import uuid4
 from recovery import Recovery
-from rpn_common.transition import Transition, Arc
-from rpn_common.place import Place
+from pnp_common.transition import Transition, Arc
+from pnp_common.place import Place
 from copy import deepcopy
 
 

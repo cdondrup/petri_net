@@ -4,8 +4,8 @@ import rostopic
 from actionlib import ActionClient
 from actionlib_msgs.msg import GoalStatus
 from threading import Lock, Thread
-from rpn_kb.knowledgebase import KnowledgeBase
-from rpn_actions.atomic_action import AtomicAction
+from pnp_kb.knowledgebase import KnowledgeBase
+from pnp_actions.atomic_action import AtomicAction
 
 
 class ROSAtomicAction(AtomicAction):
