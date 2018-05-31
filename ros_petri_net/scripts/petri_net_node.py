@@ -27,29 +27,50 @@ class PetriNetNode(object):
         a1 = PNAction(
             atomic_action=ROSAction("dummy_server"),
             recovery=Recovery(
-                before=Before(BooleanAssertion(Comparison("eq", [Query("time"), 3]), True), Recovery.SKIP_ACTION),
+                before=[
+                    Before(
+                        BooleanAssertion(
+                            Comparison("eq", [Query("time"), 3]),
+                            True
+                        ),
+                        Recovery.SKIP_ACTION)
+                ],
                 during=During(
                     preempted=[
                         PNAction(
                             ROSAction("dummy_server"),
-                            recovery=Recovery(during=During(
-                                preempted=[PNAction(ROSAction("wait", {"time": 2})), Recovery.SKIP_ACTION]
+                            recovery=Recovery(
+                                during=During(
+                                    preempted=[
+                                        PNAction(ROSAction("wait", {"time": 2})),
+                                        Recovery.SKIP_ACTION
+                                    ]
+                                )
                             )
-                        )),
+                        ),
                         Recovery.SKIP_ACTION
                     ],
                     failed=Recovery.FAIL
                 ),
-                after=After(BooleanAssertion(Comparison("eq", [LocalQuery("time"),
-                                                        LocalQuery("value")]), False), Recovery.RESTART_ACTION)
+                after=[
+                    After(
+                        BooleanAssertion(
+                            Comparison("eq", [LocalQuery("time"), LocalQuery("value")]),
+                            False
+                        ),
+                        Recovery.RESTART_ACTION
+                    )
+                ]
             )
         )
+        cp, net = gen.add_action(net, cp, a1)
+
         a21 = PNAction(ROSAction("wait"))
         a22 = PNAction(ROSAction("wait"))
         a31 = PNAction(ROSAction("wait", {"time": 5}))
         a32 = PNAction(ROSAction("wait", {"time": 6}))
-        cp, net = gen.add_action(net, cp, a1)
         cp, net = gen.add_concurrent_actions(net, cp, [[a31, a32], a21, a22])
+
         cp, net = gen.add_goal(net, cp)
         pprint(net)
         marking = np.zeros(net.num_places, dtype=int)
