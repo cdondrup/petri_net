@@ -31,11 +31,35 @@ class AbstractOperation(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def run(self, internal_kb, external_kb):
+    def run(self):
         return
 
+    def execute_query(self, query):
+        if isinstance(query, (LocalQuery, RemoteQuery)):
+            if isinstance(query, LocalQuery):
+                kb = self.internal_kb
+            elif isinstance(query, RemoteQuery):
+                kb = self.external_kb
+            return query(kb)
+        elif isinstance(query, Query):
+            r = query(self.internal_kb)
+            return r if r is not None else query(self.external_kb)
+        else:
+            return query
+
+
     def __call__(self, internal_kb, external_kb):
-        return self.run(internal_kb, external_kb)
+        self.internal_kb = internal_kb
+        self.external_kb = external_kb
+        return self.run()
+
+
+class Exists(AbstractOperation):
+    def __init__(self, query):
+        self.query = query
+
+    def run(self):
+        return self.execute_query(self.query) is not None
 
 
 class Comparison(AbstractOperation):
@@ -43,20 +67,10 @@ class Comparison(AbstractOperation):
         self.queries = queries if isinstance(queries, list) else [queries]
         self.operator = operator
 
-    def run(self, internal_kb, external_kb):
+    def run(self):
         values = []
         for q in self.queries:
-            if isinstance(q, (LocalQuery, RemoteQuery)):
-                if isinstance(q, LocalQuery):
-                    kb = internal_kb
-                elif isinstance(q, RemoteQuery):
-                    kb = external_kb
-                values.append(q(kb))
-            elif isinstance(q, Query):
-                r = q(internal_kb)
-                values.append(r if r is not None else q(external_kb))
-            else:
-                values.append(q)
+            values.append(self.execute_query(q))
         return getattr(operator, self.operator)(*values)
 
     def __str__(self):

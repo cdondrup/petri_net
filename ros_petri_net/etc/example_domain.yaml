@@ -18,13 +18,3 @@ actions:
         positive_preconditions:
             - Exists: ["time"]
 
-initial_knowledge:
-    value: 3
-plan:
-    - ROSAction:
-        name: "dummy_server"
-    - concurrent_actions:
-        - ROSAction:
-            name: "wait"
-
-
