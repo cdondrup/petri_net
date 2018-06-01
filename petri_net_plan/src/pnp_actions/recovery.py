@@ -16,15 +16,13 @@ class During(dict):
 class Before(object):
     def __init__(self, assertion=None, recovery=None):
         self.assertion = assertion
-        self.recovery = recovery
-        # self.recovery = recovery if isinstance(recovery, list) else [recovery]
+        self.recovery = recovery if isinstance(recovery, list) else [recovery]
 
 
 class After(object):
     def __init__(self, assertion=None, recovery=None):
         self.assertion = assertion
-        self.recovery = recovery
-        # self.recovery = recovery if isinstance(recovery, list) else [recovery]
+        self.recovery = recovery if isinstance(recovery, list) else [recovery]
 
 
 class Recovery(object):

@@ -33,7 +33,18 @@ class PetriNetNode(object):
                             Comparison("eq", [Query("time"), 3]),
                             True
                         ),
-                        Recovery.SKIP_ACTION)
+                        Recovery.SKIP_ACTION),
+                    Before(
+                        BooleanAssertion(
+                            Comparison("eq", [Query("time"), 2]),
+                            True
+                        ),
+                        [
+                            PNAction(ROSAction("wait", {"time": 1})),
+                            PNAction(ROSAction("dummy_server")),
+                            Recovery.SKIP_ACTION
+                        ]
+                    )
                 ],
                 during=During(
                     preempted=[
@@ -59,6 +70,16 @@ class PetriNetNode(object):
                             False
                         ),
                         Recovery.RESTART_ACTION
+                    ),
+                    After(
+                        BooleanAssertion(
+                            Comparison("eq", [Query("time"), Query("UNKNOWN ARGUMENT")]),
+                            False
+                        ),
+                        [
+                            PNAction(ROSAction("wait", {"time": 1})),
+                            Recovery.SKIP_ACTION
+                        ]
                     )
                 ]
             )
