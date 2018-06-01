@@ -8,7 +8,7 @@ Created on Wed Jul 20 13:42:25 2016
 
 import rospy
 from actionlib_msgs.msg import GoalStatus
-from ros_petri_net.msg import DummyAction, DummyResult
+from petri_net_msgs.msg import DummyAction, DummyResult
 from threading import Thread
 from actionlib import ActionServer
 

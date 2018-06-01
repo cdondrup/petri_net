@@ -60,8 +60,7 @@ class Comparison(AbstractOperation):
         return getattr(operator, self.operator)(*values)
 
     def __str__(self):
-        return "{operator}({queries})".format(operator=self.operator, queries=', '.join(map(str,
-                                                                                            self.queries)))
+        return "{operator}({queries})".format(operator=self.operator, queries=', '.join(map(str, self.queries)))
 
 
 class BooleanAssertion(object):
