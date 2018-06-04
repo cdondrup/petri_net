@@ -1,10 +1,6 @@
 from pnp_common.transition import Transition, Arc
 from pnp_common.place import Place
 from pnp_common.petri_net import PetriNet
-from pnp_actions.atomic_action import AtomicAction
-from pnp_actions.pn_action import PNAction
-from pnp_actions.recovery import Recovery, During, Before, After
-from pnp_actions.queries import Comparison, BooleanAssertion
 from pnp_kb.knowledgebase import KnowledgeBase
 from pprint import pprint
 import numpy as np

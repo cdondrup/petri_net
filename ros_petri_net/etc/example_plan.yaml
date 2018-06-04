@@ -1,15 +1,14 @@
 instances:
     - "time"
     - "value"
-predicates:
-    - Comparison: [null, [null, null]]
-    - Exists: [null]
+action_types:
+    ROSAction: "rpn_ros_interface.action.ROSAtomicAction"
 actions:
     dummy_server:
         params:
             - "value"
         negative_preconditions:
-            - Comparison: ["eq", ["time", 3]]
+            - Exists: ["time"]
         positive_effects:
             - Comparison: ["eq", ["time", "value"]]
     wait:
@@ -22,9 +21,24 @@ initial_knowledge:
     value: 3
 plan:
     - ROSAction:
-        name: "dummy_server"
+        arguments:
+            name: "dummy_server"
     - concurrent_actions:
         - ROSAction:
-            name: "wait"
-
+            arguments:
+                name: "wait"
+        - ROSAction:
+            arguments:
+                name: "wait"
+        - concurrent_actions:
+            - ROSAction:
+                arguments:
+                    name: "wait"
+                    params: 
+                        time: 5
+            - ROSAction:
+                arguments:
+                    name: "wait"
+                    params: 
+                        time: 6
 

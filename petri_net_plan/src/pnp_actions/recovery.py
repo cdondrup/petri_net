@@ -1,6 +1,4 @@
 from atomic_action import AtomicAction
-from queries import BooleanAssertion, Comparison
-import operator
 
 
 class During(dict):
@@ -44,14 +42,14 @@ class Recovery(object):
             if isinstance(during, During):
                 self.during = during
             else:
-                raise TypeError("Recovery behaviours to be executed before an action have to be of type During")
+                raise TypeError("Recovery behaviours to be executed during an action have to be of type During")
         else:
             self.during = During()
         if after is not None:
             after = after if isinstance(after, list) else [after]
             for a in after:
                 if not isinstance(a, After):
-                    raise TypeError("Recovery behaviours to be executed before an action have to be of type After")
+                    raise TypeError("Recovery behaviours to be executed after an action have to be of type After")
             self.after = after
         else:
             self.after = []
