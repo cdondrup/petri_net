@@ -10,6 +10,8 @@ class KnowledgeBase(AbstractKnowledgeBase):
                 self.update(k, v)
 
     def query(self, variable):
+        print "--- QUERY ---", variable, getattr(self, variable)
+
         return getattr(self, variable)
 
     def update(self, variable, value):

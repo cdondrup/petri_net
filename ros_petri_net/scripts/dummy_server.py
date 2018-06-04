@@ -36,6 +36,7 @@ class WaitServer(object):
             and not gh.status_tracker.status.status == GoalStatus.PREEMPTED:
             rospy.sleep(0.1)
         if not gh.status_tracker.status.status == GoalStatus.PREEMPTED:
+            print DummyResult(time=goal.value)
             gh.set_succeeded(DummyResult(time=goal.value))
             # gh.set_canceled(DummyResult(time=goal.value))
             # gh.set_aborted(DummyResult(time=goal.value))

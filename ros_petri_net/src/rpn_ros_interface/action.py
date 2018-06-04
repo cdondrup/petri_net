@@ -6,6 +6,7 @@ from actionlib_msgs.msg import GoalStatus
 from threading import Lock, Thread
 from pnp_kb.knowledgebase import KnowledgeBase
 from pnp_actions.atomic_action import AtomicAction
+from copy import deepcopy
 
 
 class ROSAtomicAction(AtomicAction):
@@ -32,9 +33,10 @@ class ROSAtomicAction(AtomicAction):
         with self.lock:
             self.client = ActionClient(self.name, self.get_action_type(self.name))
             goal = self.get_goal_type(self.name)()
-            for slot in set(goal.__slots__) - set(self.params.keys()):
-                self.params[slot] = kb.query(slot)
-            for slot, value in self.params.items():
+            tmp = deepcopy(self.params)  # Prevent to save the current state of non-fixed params
+            for slot in set(goal.__slots__) - set(tmp.keys()):
+                tmp[slot] = kb.query(slot)
+            for slot, value in tmp.items():
                 setattr(goal, slot, type(getattr(goal, slot))(value))
             self.client.wait_for_server()
             self.g = self.client.send_goal(goal)

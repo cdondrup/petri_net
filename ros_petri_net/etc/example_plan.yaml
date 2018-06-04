@@ -3,12 +3,13 @@ instances:
     - "value"
 action_types:
     ROSAction: "rpn_ros_interface.action.ROSAtomicAction"
+    KBAction: "pnp_actions.kb_action.KBAction"
 actions:
     dummy_server:
         params:
             - "value"
-        negative_preconditions:
-            - Exists: ["time"]
+        #negative_preconditions:
+            #- Exists: ["time"]
         positive_effects:
             - Comparison: ["eq", ["time", "value"]]
     wait:
@@ -18,11 +19,20 @@ actions:
             - Exists: ["time"]
 
 initial_knowledge:
-    value: 3
+    value: 5
 plan:
-    - ROSAction:
-        arguments:
-            name: "dummy_server"
+    - while: 
+        condition: {Comparison: ["gt", ["value", 2]]}
+        actions:
+        - ROSAction:
+            arguments:
+                name: "dummy_server"
+        - KBAction:
+            arguments:
+                name: "kb_op"
+                params:
+                    operation: {Operation: ["sub", ["value", 1]]}
+                    result: "value"
     - concurrent_actions:
         - ROSAction:
             arguments:

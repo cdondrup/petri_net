@@ -4,6 +4,7 @@ from pnp_common.petri_net import PetriNet
 from pnp_kb.knowledgebase import KnowledgeBase
 from pprint import pprint
 import numpy as np
+from copy import deepcopy
 
 
 class Generator(object):
@@ -32,13 +33,13 @@ class Generator(object):
 
         return Place(name=name, atomic_action=atomic_action)
 
-    def create_transition(self, name=None, atomic_action=None, condition=True, incoming_arcs=None, outgoing_arcs=None):
+    def create_transition(self, name=None, atomic_action=None, condition=True, query=None, incoming_arcs=None, outgoing_arcs=None):
         if name is None:
             name = "T{}".format(str(self.__trans_counter))
             self.__trans_counter += 1
 
         return Transition(name=name, atomic_action=atomic_action, incoming_arcs=incoming_arcs,
-                          outgoing_arcs=outgoing_arcs, condition=condition)
+                          outgoing_arcs=outgoing_arcs, condition=condition, query=query)
 
     def add_action(self, net, current_place, action):
         action.set_up(net)
@@ -69,6 +70,42 @@ class Generator(object):
         net.add_transition(join_t)
         net.add_place(join_p)
         return join_p, net
+
+    def add_loop(self, net, current_place, actions, query):
+        start_place = Place("Loop.start")
+        end_place = Place("Loop.finished")
+        net.add_place(start_place)
+        net.add_place(end_place)
+        net.add_transition(self.create_transition(
+            "Loop.start",
+            query=query,
+            incoming_arcs=[Arc(place=current_place)],
+            outgoing_arcs=[Arc(place=start_place)]
+        ))
+        query = deepcopy(query)
+        query.invert()
+        net.add_transition(self.create_transition(
+            "Loop.end",
+            query=query,
+            incoming_arcs=[Arc(place=current_place)],
+            outgoing_arcs=[Arc(place=end_place)]
+        ))
+
+        before = current_place
+        current_place = start_place
+
+        for action in actions:
+            if isinstance(action, list):
+                current_place, net = self.add_concurrent_actions(net, current_place, action)
+            else:
+                current_place, net = self.add_action(net, current_place, action)
+
+        net.add_transition(self.create_transition(
+            incoming_arcs=[Arc(place=current_place)],
+            outgoing_arcs=[Arc(place=before)]
+        ))
+
+        return end_place, net
 
     def create_fork(self, current_place, num):
         ps = [self.create_place() for _ in range(num)]

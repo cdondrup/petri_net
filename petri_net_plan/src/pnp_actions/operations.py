@@ -38,7 +38,7 @@ class Exists(AbstractOperation):
         return self.execute_query(self.query) is not None
 
 
-class Comparison(AbstractOperation):
+class Operation(AbstractOperation):
     def __init__(self, operator, queries):
         self.queries = queries if isinstance(queries, list) else [queries]
         self.operator = operator
@@ -51,6 +51,13 @@ class Comparison(AbstractOperation):
 
     def __str__(self):
         return "{operator}({queries})".format(operator=self.operator, queries=', '.join(map(str, self.queries)))
+
+
+class Comparison(Operation):
+    """
+    Operation is able to do comparisons as well but we want to make it a little more readable.
+    """
+    pass
 
 
 class BooleanAssertion(object):

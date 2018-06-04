@@ -49,42 +49,65 @@ class PetriNetNode(object):
                         res.append(o)
             return res
 
+        def __create_operation(condition, instances):
+                op = __create_queries(condition.values()[0], instances)
+                print "OP", op
+                return  getattr(operations, condition.keys()[0])(*op)
+
+        def __create_assertion(condition, truth_value, instances):
+                return BooleanAssertion(
+                    __create_operation(condition, instances),
+                    truth_value
+                )
+
         def __create_condition(type, condition, instances, truth_value, recovery):
                 op = __create_queries(condition.values()[0], instances)
                 print "OP", op
                 return type(
-                    BooleanAssertion(
-                        getattr(operations, condition.keys()[0])(*op),
-                        truth_value
-                    ),
+                    __create_assertion(condition, truth_value, instances),
                     recovery
                 )
 
         def __create_action(action, action_types, action_definitions, instances):
             print "ACTION", action
-            action_definition = action_definitions[action.values()[0]["arguments"]["name"]]
-            print "DEFINITION", action_definition
-            b = []
             try:
-                for pp in action_definition["positive_preconditions"]:
-                    b.append(__create_condition(Before, pp, instances, False, Recovery.SKIP_ACTION))
+                action_definition = action_definitions[action.values()[0]["arguments"]["name"]]
             except KeyError:
-                pass
-            try:
-                for np in action_definition["negative_preconditions"]:
-                    b.append(__create_condition(Before, np, instances, True, Recovery.SKIP_ACTION))
-            except KeyError:
-                pass
+                action_definition = None
+                b = None
+                a = None
+            else:
+                print "DEFINITION", action_definition
 
-            a = []
+                b = []
+                try:
+                    for pp in action_definition["positive_preconditions"]:
+                        b.append(__create_condition(Before, pp, instances, False, Recovery.SKIP_ACTION))
+                except KeyError:
+                    pass
+                try:
+                    for np in action_definition["negative_preconditions"]:
+                        b.append(__create_condition(Before, np, instances, True, Recovery.SKIP_ACTION))
+                except KeyError:
+                    pass
+
+                a = []
+                try:
+                    for pe in action_definition["positive_effects"]:
+                        a.append(__create_condition(After, pe, instances, False, Recovery.RESTART_ACTION))
+                except KeyError:
+                    pass
+                try:
+                    for ne in action_definition["negative_effects"]:
+                        a.append(__create_condition(After, ne, instances, True, Recovery.RESTART_ACTION))
+                except KeyError:
+                    pass
+
             try:
-                for pe in action_definition["positive_effects"]:
-                    a.append(__create_condition(After, pe, instances, False, Recovery.RESTART_ACTION))
-            except KeyError:
-                pass
-            try:
-                for ne in action_definition["negative_effects"]:
-                    a.append(__create_condition(After, ne, instances, True, Recovery.RESTART_ACTION))
+                for k in action[action.keys()[0]]["arguments"]["params"]:
+                    if k == "operation":
+                        print action[action.keys()[0]]
+                        action[action.keys()[0]]["arguments"]["params"][k] = __create_operation(action[action.keys()[0]]["arguments"]["params"][k], instances)
             except KeyError:
                 pass
 
@@ -105,14 +128,26 @@ class PetriNetNode(object):
                     res.append(__create_action(action, action_types, action_definitions, instances))
             return res
 
-        for action in plan["plan"]:
-            if "concurrent_actions" in action:
-                a = __create_concurrent_actions(action, action_types, action_definitions, instances)
-                cp, net = gen.add_concurrent_actions(net, cp, a)
-            else:
-                a = __create_action(action, action_types, action_definitions, instances)
-                cp, net = gen.add_action(net, cp, a)
+        def __parse_plan(cp, net, plan, action_types, action_definitions, instances):
+            for action in plan:
+                if "while" in action:
+                    print action
+                    action = action["while"]
+                    cond = __create_assertion(action["condition"], True, instances)
+                    acts = []
+                    for a in action["actions"]:
+                        acts.append(__create_action(a, action_types, action_definitions, instances))
+                    cp, net = gen.add_loop(net, cp, acts, cond)
+                elif "concurrent_actions" in action:
+                    a = __create_concurrent_actions(action, action_types, action_definitions, instances)
+                    cp, net = gen.add_concurrent_actions(net, cp, a)
+                else:
+                    a = __create_action(action, action_types, action_definitions, instances)
+                    cp, net = gen.add_action(net, cp, a)
 
+            return cp, net
+
+        cp, net = __parse_plan(cp, net, plan["plan"], action_types, action_definitions, instances)
         cp, net = gen.add_goal(net, cp)
         pprint(net)
         marking = np.zeros(net.num_places, dtype=int)
