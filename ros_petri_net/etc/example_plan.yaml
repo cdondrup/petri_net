@@ -1,54 +1,53 @@
-instances:
+instances: &instances
     - "time"
     - "value"
 action_types:
-    ROSAction: "rpn_ros_interface.action.ROSAtomicAction"
-    KBAction: "pnp_actions.kb_action.KBAction"
+    BaseAction: &base_action
+        instances: *instances
+    ROSAction: &ros_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.action"
+            class:  "ROSAtomicAction"
+    KBAction: &kb_action
+        <<: *base_action
+        type:
+            module: "pnp_actions.kb_action"
+            class:  "KBAction"
 actions:
     dummy_server:
+        <<: *ros_action
         params:
             - "value"
-        #negative_preconditions:
-            #- Exists: ["time"]
         positive_effects:
-            - Comparison: ["eq", ["time", "value"]]
+            - Exists: [Query: "time"]
+            - Comparison: ["eq", [Query: "time", Query: "value"]]
     wait:
+        <<: *ros_action
         params:
             - "time"
         positive_preconditions:
-            - Exists: ["time"]
+            - Exists: [Query: "time"]
+    kb_operation:
+        <<: *kb_action
+        params:
+            - "operation"
+            - "result"
 
 initial_knowledge:
     value: 5
 plan:
     - while: 
-        condition: {Comparison: ["gt", ["value", 2]]}
+        condition: {Comparison: ["gt", [Query: "value", 2]]}
         actions:
-        - ROSAction:
-            arguments:
-                name: "dummy_server"
-        - KBAction:
-            arguments:
-                name: "kb_op"
-                params:
-                    operation: {Operation: ["sub", ["value", 1]]}
-                    result: "value"
+            - dummy_server: {}
+            - kb_operation:
+                operation: {Operation: ["sub", [Query: "value", 1]]}
+                result: "value"
     - concurrent_actions:
-        - ROSAction:
-            arguments:
-                name: "wait"
-        - ROSAction:
-            arguments:
-                name: "wait"
+        - wait: {}
+        - wait: {}
         - concurrent_actions:
-            - ROSAction:
-                arguments:
-                    name: "wait"
-                    params: 
-                        time: 5
-            - ROSAction:
-                arguments:
-                    name: "wait"
-                    params: 
-                        time: 6
+            - wait: {time: 5}
+            - wait: {time: 6}
 

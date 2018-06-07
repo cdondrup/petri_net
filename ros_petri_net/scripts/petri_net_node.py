@@ -22,132 +22,113 @@ class PetriNetNode(object):
         from pnp_gen.generator import Generator
         from pnp_actions.pn_action import PNAction
         from pnp_actions.recovery import Recovery, Before, During, After
-        from pnp_actions.queries import LocalQuery, RemoteQuery, Query
+        import pnp_actions.queries as queries
         from pnp_actions.operations import BooleanAssertion
         import pnp_actions.operations as operations
         from pprint import pprint
         import numpy as np
         import importlib
+        import inspect
 
-        action_types = {k: getattr(importlib.import_module(v[:v.rfind('.')]), v[v.rfind('.')+1:]) for k, v in plan["action_types"].items()}
+        def __create_op(mutable, classes):
+            if isinstance(mutable, list):
+                for i, m in enumerate(mutable):
+                    mutable[i] = __create_op(m, classes)
+            elif isinstance(mutable, dict):
+                for k, v in classes.iteritems():
+                    if k in mutable:
+                        return v(*(mutable.values()[0] if isinstance(mutable.values()[0], list) else [mutable.values()[0]]))
+                for k in mutable.keys():
+                    mutable[k] = __create_op(mutable[k], classes)
+            return mutable
+
+        query_members = dict(inspect.getmembers(queries, inspect.isclass))
+        operations_members = dict(inspect.getmembers(operations, inspect.isclass))
+
         action_definitions = plan["actions"]
-        instances = plan["instances"]
+        action_definitions = __create_op(__create_op(action_definitions, query_members), operations_members)
+        for k, v in action_definitions.iteritems():
+            action_definitions[k]["type"] = getattr(importlib.import_module(v["type"]["module"]), v["type"]["class"])
+        print " --- Action Definitons: --- "
+        pprint(action_definitions)
 
         gen = Generator()
         cp, net = gen.create_net("test_net1", ROSKB, initial_knowledge=plan["initial_knowledge"])
 
-        def __create_queries(operation, instances):
-            operation = operation if isinstance(operation, list) else [operation]
-            res = []
-            for o in operation:
-                if isinstance(o, list):
-                    res.append(__create_queries(o, instances))
-                else:
-                    if o in instances:
-                        res.append(Query(o))
-                    else:
-                        res.append(o)
-            return res
+        plan = __create_op(__create_op(plan["plan"], query_members), operations_members)
+        print " --- Plan: --- "
+        pprint(plan, width=120)
 
-        def __create_operation(condition, instances):
-                op = __create_queries(condition.values()[0], instances)
-                print "OP", op
-                return  getattr(operations, condition.keys()[0])(*op)
-
-        def __create_assertion(condition, truth_value, instances):
-                return BooleanAssertion(
-                    __create_operation(condition, instances),
-                    truth_value
-                )
-
-        def __create_condition(type, condition, instances, truth_value, recovery):
-                op = __create_queries(condition.values()[0], instances)
-                print "OP", op
-                return type(
-                    __create_assertion(condition, truth_value, instances),
-                    recovery
-                )
-
-        def __create_action(action, action_types, action_definitions, instances):
+        def __create_action(action, action_definitions):
             print "ACTION", action
+            name, params = action.items()[0]  # Only ever has one item
+            ad = action_definitions[name]
+            print "DEFINITION", ad
+
+            b = []
             try:
-                action_definition = action_definitions[action.values()[0]["arguments"]["name"]]
+                for pp in ad["positive_preconditions"]:
+                    b.append(Before(BooleanAssertion(pp, False), Recovery.SKIP_ACTION))
             except KeyError:
-                action_definition = None
-                b = None
-                a = None
-            else:
-                print "DEFINITION", action_definition
-
-                b = []
-                try:
-                    for pp in action_definition["positive_preconditions"]:
-                        b.append(__create_condition(Before, pp, instances, False, Recovery.SKIP_ACTION))
-                except KeyError:
-                    pass
-                try:
-                    for np in action_definition["negative_preconditions"]:
-                        b.append(__create_condition(Before, np, instances, True, Recovery.SKIP_ACTION))
-                except KeyError:
-                    pass
-
-                a = []
-                try:
-                    for pe in action_definition["positive_effects"]:
-                        a.append(__create_condition(After, pe, instances, False, Recovery.RESTART_ACTION))
-                except KeyError:
-                    pass
-                try:
-                    for ne in action_definition["negative_effects"]:
-                        a.append(__create_condition(After, ne, instances, True, Recovery.RESTART_ACTION))
-                except KeyError:
-                    pass
-
+                pass
             try:
-                for k in action[action.keys()[0]]["arguments"]["params"]:
-                    if k == "operation":
-                        print action[action.keys()[0]]
-                        action[action.keys()[0]]["arguments"]["params"][k] = __create_operation(action[action.keys()[0]]["arguments"]["params"][k], instances)
+                for np in ad["negative_preconditions"]:
+                    b.append(Before(BooleanAssertion(np, True), Recovery.SKIP_ACTION))
+            except KeyError:
+                pass
+
+            a = []
+            try:
+                for pe in ad["positive_effects"]:
+                    b.append(Before(BooleanAssertion(pe, True), Recovery.SKIP_ACTION))
+                    a.append(After(BooleanAssertion(pe, False), Recovery.RESTART_ACTION))
+            except KeyError:
+                pass
+            try:
+                for ne in ad["negative_effects"]:
+                    b.append(Before(BooleanAssertion(pe, False), Recovery.SKIP_ACTION))
+                    a.append(After(BooleanAssertio(ne, True), Recovery.RESTART_ACTION))
             except KeyError:
                 pass
 
             return PNAction(
-                action_types[action.keys()[0]](**action.values()[0]["arguments"]),
+                ad["type"](name, params),
                 recovery=Recovery(
                     before=b,
                     after=a
                 )
             )
 
-        def __create_concurrent_actions(actions, action_types, action_definitions, instances):
+        def __create_concurrent_actions(actions, action_definitions):
             res  = []
             for action in actions.values()[0]:
                 if "concurrent_actions" in action:
-                    res.append(__create_concurrent_actions(action, action_types, action_definitions, instances))
+                    res.append(__create_concurrent_actions(action, action_definitions))
                 else:
-                    res.append(__create_action(action, action_types, action_definitions, instances))
+                    res.append(__create_action(action, action_definitions))
             return res
 
-        def __parse_plan(cp, net, plan, action_types, action_definitions, instances):
+        def __parse_plan(cp, net, plan, action_definitions):
             for action in plan:
                 if "while" in action:
                     print action
-                    action = action["while"]
-                    cond = __create_assertion(action["condition"], True, instances)
+                    loop = action["while"]
+                    print loop
                     acts = []
-                    for a in action["actions"]:
-                        acts.append(__create_action(a, action_types, action_definitions, instances))
+                    for a in loop["actions"]:
+                        acts.append(__create_action(a, action_definitions))
+                    cond = BooleanAssertion(loop["condition"], True)
                     cp, net = gen.add_loop(net, cp, acts, cond)
                 elif "concurrent_actions" in action:
-                    a = __create_concurrent_actions(action, action_types, action_definitions, instances)
+                    a = __create_concurrent_actions(action, action_definitions)
                     cp, net = gen.add_concurrent_actions(net, cp, a)
                 else:
-                    a = __create_action(action, action_types, action_definitions, instances)
+                    a = __create_action(action, action_definitions)
                     cp, net = gen.add_action(net, cp, a)
 
             return cp, net
 
-        cp, net = __parse_plan(cp, net, plan["plan"], action_types, action_definitions, instances)
+        cp, net = __parse_plan(cp, net, plan, action_definitions)
         cp, net = gen.add_goal(net, cp)
         pprint(net)
         marking = np.zeros(net.num_places, dtype=int)

@@ -37,6 +37,9 @@ class Exists(AbstractOperation):
     def run(self):
         return self.execute_query(self.query) is not None
 
+    def __str__(self):
+        return "{operator}({query})".format(operator=self.__class__.__name__, query=str(self.query))
+
 
 class Operation(AbstractOperation):
     def __init__(self, operator, queries):
