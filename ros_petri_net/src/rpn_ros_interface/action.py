@@ -3,20 +3,13 @@ import roslib
 import rostopic
 from actionlib import ActionClient
 from actionlib_msgs.msg import GoalStatus
-from threading import Lock, Thread
+from threading import Thread, Event
 from pnp_kb.knowledgebase import KnowledgeBase
 from pnp_actions.atomic_action import AtomicAction
 from copy import deepcopy
 
 
 class ROSAtomicAction(AtomicAction):
-    def __init__(self, name, params=None):
-        super(ROSAtomicAction, self).__init__(name, params)
-        self.lock = Lock()
-        self.g = None
-        self.monitor_thread = None
-        self.server_thread = None
-
     def get_goal_type(self, action_name):
         topic_type = rostopic._get_topic_type("/%s/goal" % action_name)[0]
         # remove "Action" string from goal type
@@ -29,8 +22,20 @@ class ROSAtomicAction(AtomicAction):
         assert("Goal" in topic_type)
         return roslib.message.get_message_class(topic_type[:-4])
 
-    def call_server(self, kb):
-        with self.lock:
+    def run(self, kb, external_kb):
+        with self.__mutex__:
+            server_finished = Event()
+
+            def trans_cb(gh):
+                print "{}({}): changed state to: {}".format(self.name, ', '.join(self.params), gh.get_goal_status())
+                if gh.get_goal_status() in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED):
+                    result = gh.get_result()
+                    if result != None and result:
+                        for slot in result.__slots__:
+                            res = getattr(result,slot)
+                            kb.update(slot, res)
+                    server_finished.set()
+
             self.client = ActionClient(self.name, self.get_action_type(self.name))
             goal = self.get_goal_type(self.name)()
             tmp = deepcopy(self.params)  # Prevent to save the current state of non-fixed params
@@ -39,37 +44,22 @@ class ROSAtomicAction(AtomicAction):
             for slot, value in tmp.items():
                 setattr(goal, slot, type(getattr(goal, slot))(value))
             self.client.wait_for_server()
-            self.g = self.client.send_goal(goal)
-
-    def start(self, kb, external_kb):
-        if self.server_thread is None or not self.server_thread.is_alive():
-            self.server_thread = Thread(target=self.call_server, args=(kb,))
-            self.server_thread.start()
-
-    def wait_for_action(self, kb):
-        if self.g is not None:
-            with self.lock:
-                while self.g.get_goal_status() in (GoalStatus.ACTIVE, GoalStatus.PENDING):
-                    rospy.sleep(.01)
-                result = self.g.get_result()
-                if result != None and result:
-                    for slot in result.__slots__:
-                        res = getattr(result,slot)
-                        kb.update(slot, res)
-
-    def monitor(self, kb, external_kb):
-        if self.monitor_thread is None or not self.monitor_thread.is_alive():
-            self.monitor_thread = Thread(target=self.wait_for_action, args=(kb,))
-            self.monitor_thread.start()
+            self.gh = self.client.send_goal(goal, transition_cb=trans_cb)
+            server_finished.wait()
+            result = self.gh.get_result()
+            if result != None and result:
+                for slot in result.__slots__:
+                    res = getattr(result,slot)
+                    kb.update(slot, res)
 
     def get_state(self):
-        if self.lock.acquire(False):
+        if self.__mutex__.acquire(False):
             try:
-                return self.g.get_goal_status()
+                return self.gh.get_goal_status()
             except:
                 return -1
             finally:
-                self.lock.release()
+                self.__mutex__.release()
         return -1
 
     @property

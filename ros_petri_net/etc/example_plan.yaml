@@ -20,7 +20,6 @@ actions:
         params:
             - "value"
         positive_effects:
-            - Exists: [Query: "time"]
             - Comparison: ["eq", [Query: "time", Query: "value"]]
     wait:
         <<: *ros_action

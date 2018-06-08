@@ -34,10 +34,10 @@ class Transition(PNBaseObject):
             self.loginfo("Condition is not callable, assuming boolean statement")
             return self.condition
 
-    def execute_atomic_action(self):
+    def execute_atomic_action(self, event):
         if self.atomic_action:
             self.loginfo("Executing atomic_action: '{}'".format(self.atomic_action))
-            self.atomic_action.start(self.kb, self.external_kb)
+            self.atomic_action.start(self.kb, self.external_kb, event)
             self.loginfo("Action '{}' started.".format(self.atomic_action))
         else:
             self.loginfo("No atomic_action")

@@ -2,24 +2,23 @@ from atomic_action import AtomicAction
 
 
 class KBAction(AtomicAction):
-    def start(self, kb ,external_kb):
-        print "#############################", self.params
-        kb.update(self.params["result"], self.params["operation"](kb, external_kb))
-        print kb.query(self.params["result"])
-
-    def monitor(self, kb, external_kb):
-        # Instantaneous action
-        return
+    def run(self, kb ,external_kb):
+        with self.__mutex__:
+            kb.update(self.params["result"], self.params["operation"](kb, external_kb))
+            print kb.query(self.params["result"])
 
     @property
     def succeeded(self):
         # Always succeed
-        return True
+        with self.__mutex__:
+            return True
 
     @property
     def preempted(self):
-        return False
+        with self.__mutex__:
+            return False
 
     @property
     def failed(self):
-        return False
+        with self.__mutex__:
+            return False

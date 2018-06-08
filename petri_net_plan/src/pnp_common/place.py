@@ -9,10 +9,10 @@ class Place(PNBaseObject):
     def monitor_atomic_action(self):
         if self.atomic_action:
             self.loginfo("Monitoring atomic_action: '{}'".format(self.atomic_action))
-            self.atomic_action.monitor(self.kb, self.external_kb)
+            return self.atomic_action.monitor()
         else:
             self.loginfo("No atomic_action")
-        return
+        return None
 
     def __str__(self):
         return self.name + ((", atomic_action: " + str(self.atomic_action)) if self.atomic_action else "")
