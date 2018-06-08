@@ -1,6 +1,6 @@
 import operator
 from abc import ABCMeta, abstractmethod
-from queries import Query, LocalQuery, RemoteQuery
+from pnp_kb.queries import Query, LocalQuery, RemoteQuery
 
 
 class AbstractOperation(object):
@@ -23,11 +23,13 @@ class AbstractOperation(object):
         else:
             return query
 
-
     def __call__(self, internal_kb, external_kb):
         self.internal_kb = internal_kb
         self.external_kb = external_kb
         return self.run()
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Exists(AbstractOperation):
@@ -60,7 +62,11 @@ class Comparison(Operation):
     """
     Operation is able to do comparisons as well but we want to make it a little more readable.
     """
-    pass
+
+    def __init__(self, operator, queries):
+        super(Comparison, self).__init__(operator, queries)
+        if len(self.queries) != 2:
+            raise AttributeError("A comparison needs exactly two arguments.")
 
 
 class BooleanAssertion(object):

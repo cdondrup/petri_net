@@ -19,20 +19,22 @@ actions:
         <<: *ros_action
         params:
             - "value"
-        positive_effects:
-            - Comparison: ["eq", [Query: "time", Query: "value"]]
+        effects:
+            or:
+                - Comparison: ["eq", [Query: "time", Query: "value"]]
+                - not: {Comparison: ["ne", [Query: "time", Query: "value"]]}
     wait:
         <<: *ros_action
         params:
             - "time"
-        positive_preconditions:
-            - Exists: [Query: "time"]
+        preconditions:
+            Exists: [Query: "time"]
     kb_operation:
         <<: *kb_action
         params:
             - "operation"
             - "result"
-
+---
 initial_knowledge:
     value: 5
 plan:

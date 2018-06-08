@@ -12,7 +12,10 @@ class AbstractAtomicQuery(object):
         return kb.query(self.attr)
 
     def __str__(self):
-        return str(self.attr)
+        return "{}({})".format(self.__class__.__name__, str(self.attr))
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class LocalQuery(AbstractAtomicQuery):

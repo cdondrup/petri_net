@@ -10,7 +10,7 @@ class PetriNetNode(object):
     def __init__(self, name):
         rospy.loginfo("Starting '{}' ...".format(name))
         with open(rospy.get_param("~plan"), 'r') as f:
-            self.plan = yaml.load(f)
+            self.plan = [x for x in yaml.load_all(f)]
         print self.plan
         exe = Executor()
         exe.execute_net(exe.add_net(*self.create_net_from_plan(self.plan)))
@@ -22,9 +22,10 @@ class PetriNetNode(object):
         from pnp_gen.generator import Generator
         from pnp_actions.pn_action import PNAction
         from pnp_actions.recovery import Recovery, Before, During, After
-        import pnp_actions.queries as queries
-        from pnp_actions.operations import BooleanAssertion
-        import pnp_actions.operations as operations
+        import pnp_kb.queries as queries
+        from pnp_gen.operations import BooleanAssertion
+        import pnp_gen.operations as operations
+        import pnp_gen.logical_operations as logical_operations
         from pprint import pprint
         import numpy as np
         import importlib
@@ -35,18 +36,25 @@ class PetriNetNode(object):
                 for i, m in enumerate(mutable):
                     mutable[i] = __create_op(m, classes)
             elif isinstance(mutable, dict):
+                for k in mutable.keys():
+                    mutable[k] = __create_op(mutable[k], classes)
                 for k, v in classes.iteritems():
                     if k in mutable:
                         return v(*(mutable.values()[0] if isinstance(mutable.values()[0], list) else [mutable.values()[0]]))
-                for k in mutable.keys():
-                    mutable[k] = __create_op(mutable[k], classes)
             return mutable
+
+        domain, plan = plan
 
         query_members = dict(inspect.getmembers(queries, inspect.isclass))
         operations_members = dict(inspect.getmembers(operations, inspect.isclass))
+        logical_operations_members = dict(inspect.getmembers(logical_operations, inspect.isclass))
+        for k, v in logical_operations_members.items():
+            key = k.lower().replace('logical', '')
+            logical_operations_members[key] = v
+        print logical_operations_members
 
-        action_definitions = plan["actions"]
-        action_definitions = __create_op(__create_op(action_definitions, query_members), operations_members)
+        action_definitions = domain["actions"]
+        action_definitions = __create_op(__create_op(__create_op(action_definitions, query_members), operations_members), logical_operations_members)
         for k, v in action_definitions.iteritems():
             action_definitions[k]["type"] = getattr(importlib.import_module(v["type"]["module"]), v["type"]["class"])
         print " --- Action Definitons: --- "
@@ -55,7 +63,7 @@ class PetriNetNode(object):
         gen = Generator()
         cp, net = gen.create_net("test_net1", ROSKB, initial_knowledge=plan["initial_knowledge"])
 
-        plan = __create_op(__create_op(plan["plan"], query_members), operations_members)
+        plan = __create_op(__create_op(__create_op(plan["plan"], query_members), operations_members), logical_operations_members)
         print " --- Plan: --- "
         pprint(plan, width=120)
 
@@ -65,29 +73,16 @@ class PetriNetNode(object):
             ad = action_definitions[name]
             print "DEFINITION", ad
 
-            b = []
+            b = []; a = []
+
             try:
-                for pp in ad["positive_preconditions"]:
-                    b.append(Before(BooleanAssertion(pp, False), Recovery.SKIP_ACTION))
-            except KeyError:
-                pass
-            try:
-                for np in ad["negative_preconditions"]:
-                    b.append(Before(BooleanAssertion(np, True), Recovery.SKIP_ACTION))
+                b.append(Before(BooleanAssertion(ad["preconditions"], False), Recovery.SKIP_ACTION))
             except KeyError:
                 pass
 
-            a = []
             try:
-                for pe in ad["positive_effects"]:
-                    b.append(Before(BooleanAssertion(pe, True), Recovery.SKIP_ACTION))
-                    a.append(After(BooleanAssertion(pe, False), Recovery.RESTART_ACTION))
-            except KeyError:
-                pass
-            try:
-                for ne in ad["negative_effects"]:
-                    b.append(Before(BooleanAssertion(pe, False), Recovery.SKIP_ACTION))
-                    a.append(After(BooleanAssertio(ne, True), Recovery.RESTART_ACTION))
+                b.append(Before(BooleanAssertion(ad["effects"], True), Recovery.SKIP_ACTION))
+                a.append(After(BooleanAssertion(ad["effects"], False), Recovery.RESTART_ACTION))
             except KeyError:
                 pass
 
