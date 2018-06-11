@@ -9,11 +9,11 @@ action_types:
         type:
             module: "rpn_ros_interface.action"
             class:  "ROSAtomicAction"
-    PNAction: &pn_action
+    RPNAction: &rpn_action
         <<: *base_action
         type:
-            module: "rpn_ros_interface.pn_action"
-            class:  "PNAtomicAction"
+            module: "rpn_ros_interface.rpn_action"
+            class:  "RPNAtomicAction"
     KBAction: &kb_action
         <<: *base_action
         type:
@@ -21,11 +21,11 @@ action_types:
             class:  "KBAction"
 actions:
     dummy_server:
-        <<: *pn_action
+        <<: *rpn_action
         params:
             - "value"
         effects:
-            or:
+            and:
                 - Comparison: ["eq", [Query: "time", Query: "value"]]
                 - not: {Comparison: ["ne", [Query: "time", Query: "value"]]}
     wait:
@@ -41,7 +41,7 @@ actions:
             - "result"
 ---
 initial_knowledge:
-    value: 5
+    value: 3
 plan:
     - while: 
         condition: {Comparison: ["gt", [Query: "value", 2]]}

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import rospy
-from actionlib import SimpleActionClient
+from actionlib import ActionClient
 from petri_net_msgs.msg import RPNAction, RPNGoal
 import yaml
 import json
@@ -11,11 +11,12 @@ import json
 class TestClient(object):
     def __init__(self, name):
         rospy.loginfo("Starting '{}'...".format(name))
-        self.client = SimpleActionClient("/RPN", RPNAction)
+        self.client = ActionClient("/RPN", RPNAction)
         self.client.wait_for_server()
         with open(rospy.get_param("~plan"), 'r') as f:
             self.domain, self.plan = [x for x in yaml.load_all(f)]
-        self.client.send_goal_and_wait(RPNGoal(domain=json.dumps(self.domain), plan=json.dumps(self.plan)))
+        g = self.client.send_goal(RPNGoal(domain=json.dumps(self.domain), plan=json.dumps(self.plan)))
+        print g.comm_state_machine.action_goal.goal_id
         rospy.loginfo("Started '{}'.".format(name))
 
 

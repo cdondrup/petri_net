@@ -1,0 +1,8 @@
+int32 LOCAL=0
+int32 REMOTE=1
+int32 ALL=2
+
+int32 type
+string attr
+string value
+---
