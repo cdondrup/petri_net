@@ -15,8 +15,6 @@ from petri_net_msgs.srv import PNUpdate, PNUpdateRequest
 class RPNSimpleActionServer(actionlib.SimpleActionServer):
     def __init__(self, name, ActionSpec, execute_cb=None, auto_start=True):
         self.ns = name
-        self.query_service = None
-        self.update_service = None
         actionlib.SimpleActionServer.__init__(self,
             name=name,
             ActionSpec=ActionSpec,
@@ -25,11 +23,10 @@ class RPNSimpleActionServer(actionlib.SimpleActionServer):
         )
 
     def query_kb(self, type, attr):
-        if self.query_service is None:
-            self.query_service = "/"+self.current_goal.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')+"/query"
+        query_service = "/"+self.current_goal.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')+"/query"
 
         return ut.call_service(
-            self.query_service,
+            query_service,
             PNQuery,
             PNQueryRequest(
                 type=type,
@@ -39,11 +36,10 @@ class RPNSimpleActionServer(actionlib.SimpleActionServer):
 
 
     def update_kb(self, type, attr, value):
-        if self.update_service is None:
-            self.update_service = "/"+self.current_goal.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')+"/update"
+        update_service = "/"+self.current_goal.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')+"/update"
 
         return ut.call_service(
-            self.update_service,
+            update_service,
             PNUpdate,
             PNUpdateRequest(
                 type=type,

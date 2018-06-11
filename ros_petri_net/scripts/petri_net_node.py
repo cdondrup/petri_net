@@ -8,7 +8,6 @@ from pnp_execution.executor import Executor
 import yaml
 import json
 from copy import deepcopy
-from rpn_ros_interface.ros_external_knowledge_base import ROSExternalKnowledgeBase as ROSKB
 from pnp_gen.generator import Generator
 from pnp_actions.pn_action import PNAction
 from pnp_actions.recovery import Recovery, Before, During, After
@@ -61,10 +60,8 @@ class PetriNetNode(object):
         return mutable
 
     def __create_action(self, action, action_definitions):
-        print "ACTION", action
         name, params = action.items()[0]  # Only ever has one item
         ad = action_definitions[name]
-        print "DEFINITION", ad
 
         b = []; a = []
 
@@ -115,6 +112,9 @@ class PetriNetNode(object):
         return cp, net
 
     def create_net_from_plan(self, domain, plan):
+        external_kb = domain["external_knowledge_base"]
+        external_kb = getattr(importlib.import_module(external_kb["module"]),external_kb["class"])
+
         members = dict(inspect.getmembers(queries, inspect.isclass))
         members.update(dict(inspect.getmembers(updates, inspect.isclass)))
         members.update(dict(inspect.getmembers(operations, inspect.isclass)))
@@ -132,7 +132,7 @@ class PetriNetNode(object):
         pprint(action_definitions)
 
         gen = Generator()
-        cp, net = gen.create_net("test_net1", ROSKB, initial_knowledge=plan["initial_knowledge"])
+        cp, net = gen.create_net("test_net1", external_kb, initial_knowledge=plan["initial_knowledge"])
 
         plan = self.__create_op(plan["plan"], members)
         print " --- Plan: --- "
