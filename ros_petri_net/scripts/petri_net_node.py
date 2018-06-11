@@ -20,6 +20,7 @@ from pprint import pprint
 import numpy as np
 import importlib
 import inspect
+from threading import Thread
 
 
 class PetriNetNode(object):
@@ -29,7 +30,7 @@ class PetriNetNode(object):
         # with open(rospy.get_param("~plan"), 'r') as f:
             # self.plan = [x for x in yaml.load_all(f)]
         # print self.plan
-        # exe = Executor()
+        self.exe = Executor()
         # exe.execute_net(exe.add_net(*self.create_net_from_plan(self.plan)))
         # exe.execute_net(exe.add_net(*self.test("test_net_1", {"value": 3})))
         # exe.execute_net(exe.add_net(*Generator().test("test_net_2", {"value": 4})))
@@ -39,8 +40,11 @@ class PetriNetNode(object):
     def goal_cb(self, gh):
         gh.set_accepted()
         goal = gh.get_goal()
-        exe = Executor()
-        exe.execute_net(exe.add_net(*self.create_net_from_plan(json.loads(goal.json_plan))))
+        net, marking = self.create_net_from_plan(json.loads(goal.domain), json.loads(goal.plan))
+        Thread(target=self.execute_net, args=(gh, net, marking)).start()
+
+    def execute_net(self, gh, net, marking):
+        self.exe.execute_net_and_wait(self.exe.add_net(net, marking))
         gh.set_succeeded()
 
     def __create_op(self, mutable, classes):
@@ -109,27 +113,17 @@ class PetriNetNode(object):
 
         return cp, net
 
-    def create_net_from_plan(self, plan):
-        domain, plan = plan
-
-        query_members = dict(inspect.getmembers(queries, inspect.isclass))
-        operations_members = dict(inspect.getmembers(operations, inspect.isclass))
-        logical_operations_members = dict(inspect.getmembers(logical_operations, inspect.isclass))
-        for k, v in logical_operations_members.items():
-            key = k.lower().replace('logical', '')
-            logical_operations_members[key] = v
+    def create_net_from_plan(self, domain, plan):
+        members = dict(inspect.getmembers(queries, inspect.isclass))
+        members.update(dict(inspect.getmembers(operations, inspect.isclass)))
+        members.update(dict(inspect.getmembers(logical_operations, inspect.isclass)))
+        for k, v in members.items():
+            if "Logical" in k:
+                key = k.lower().replace('logical', '')
+                members[key] = v
 
         action_definitions = domain["actions"]
-        action_definitions = self.__create_op(
-            self.__create_op(
-                self.__create_op(
-                    action_definitions,
-                    query_members
-                ),
-                operations_members
-            ),
-            logical_operations_members
-        )
+        action_definitions = self.__create_op(action_definitions, members)
         for k, v in action_definitions.iteritems():
             action_definitions[k]["type"] = getattr(importlib.import_module(v["type"]["module"]), v["type"]["class"])
         print " --- Action Definitons: --- "
@@ -138,16 +132,7 @@ class PetriNetNode(object):
         gen = Generator()
         cp, net = gen.create_net("test_net1", ROSKB, initial_knowledge=plan["initial_knowledge"])
 
-        plan = self.__create_op(
-            self.__create_op(
-                self.__create_op(
-                    plan["plan"],
-                    query_members
-                ),
-                operations_members
-            ),
-            logical_operations_members
-        )
+        plan = self.__create_op(plan["plan"], members)
         print " --- Plan: --- "
         pprint(plan, width=120)
 

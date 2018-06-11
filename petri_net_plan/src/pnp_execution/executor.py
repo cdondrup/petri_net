@@ -22,6 +22,13 @@ class Executor(object):
         if self.nets[net_id]["thread"] is None or not self.nets[net_id]["thread"].is_alive():
             self.nets[net_id]["thread"] = Thread(target=self.__run, args=(net_id,))
             self.nets[net_id]["thread"].start()
+        return net_id
+
+    def wait_for_net(self, net_id, timeout=None):
+        self.nets[net_id]["thread"].join(timeout)
+
+    def execute_net_and_wait(self, net_id, timeout=None):
+        self.wait_for_net(self.execute_net(net_id), timeout)
 
     def __run(self, net_id):
         net = self.nets[net_id]["net"]
