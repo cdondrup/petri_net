@@ -9,6 +9,11 @@ action_types:
         type:
             module: "rpn_ros_interface.action"
             class:  "ROSAtomicAction"
+    PNAction: &pn_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.pn_action"
+            class:  "PNAtomicAction"
     KBAction: &kb_action
         <<: *base_action
         type:
@@ -16,7 +21,7 @@ action_types:
             class:  "KBAction"
 actions:
     dummy_server:
-        <<: *ros_action
+        <<: *pn_action
         params:
             - "value"
         effects:
@@ -43,7 +48,7 @@ plan:
         actions:
             - dummy_server: {}
             - kb_operation:
-                operation: {Operation: ["sub", [Query: "value", 1]]}
+                operation: {LocalUpdate: ["value", {Operation: ["sub", [Query: "value", 1]]}]}
                 result: "value"
     - concurrent_actions:
         - wait: {}

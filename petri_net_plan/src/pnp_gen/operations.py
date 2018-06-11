@@ -11,15 +11,8 @@ class AbstractOperation(object):
         return
 
     def execute_query(self, query):
-        if isinstance(query, (LocalQuery, RemoteQuery)):
-            if isinstance(query, LocalQuery):
-                kb = self.internal_kb
-            elif isinstance(query, RemoteQuery):
-                kb = self.external_kb
-            return query(kb)
-        elif isinstance(query, Query):
-            r = query(self.internal_kb)
-            return r if r is not None else query(self.external_kb)
+        if isinstance(query, (Query, LocalQuery, RemoteQuery)):
+            return query(self.internal_kb, self.external_kb)
         else:
             return query
 

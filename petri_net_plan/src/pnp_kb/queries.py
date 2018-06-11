@@ -8,8 +8,18 @@ class AbstractAtomicQuery(object):
     def __init__(self, attr):
         self.attr = attr
 
-    def __call__(self, kb):
-        return kb.query(self.attr)
+    @abstractmethod
+    def _run(self, kb, external_kb):
+        return
+
+    def _call_op(self, op, kb, external_kb):
+        try:
+            return op(kb, external_kb)
+        except TypeError:
+            return op
+
+    def __call__(self, kb, external_kb):
+        return self._run(kb, external_kb)
 
     def __str__(self):
         return "{}({})".format(self.__class__.__name__, str(self.attr))
@@ -19,13 +29,17 @@ class AbstractAtomicQuery(object):
 
 
 class LocalQuery(AbstractAtomicQuery):
-    pass
+    def _run(self, kb, external_kb):
+        return kb.query(self._call_op(self.attr, kb, external_kb))
 
 
 class RemoteQuery(AbstractAtomicQuery):
-    pass
+    def _run(self, kb, external_kb):
+        return external_kb.query(self._call_op(self.attr, kb, external_kb))
 
 
 class Query(AbstractAtomicQuery):
-    pass
+    def _run(self, kb, external_kb):
+        r = kb.query(self._call_op(self.attr, kb, external_kb))
+        return r if r is not None else external_kb.query(self._call_op(self.attr, kb, external_kb))
 

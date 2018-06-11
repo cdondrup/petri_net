@@ -13,6 +13,7 @@ from pnp_gen.generator import Generator
 from pnp_actions.pn_action import PNAction
 from pnp_actions.recovery import Recovery, Before, During, After
 import pnp_kb.queries as queries
+import pnp_kb.updates as updates
 from pnp_gen.operations import BooleanAssertion
 import pnp_gen.operations as operations
 import pnp_gen.logical_operations as logical_operations
@@ -115,6 +116,7 @@ class PetriNetNode(object):
 
     def create_net_from_plan(self, domain, plan):
         members = dict(inspect.getmembers(queries, inspect.isclass))
+        members.update(dict(inspect.getmembers(updates, inspect.isclass)))
         members.update(dict(inspect.getmembers(operations, inspect.isclass)))
         members.update(dict(inspect.getmembers(logical_operations, inspect.isclass)))
         for k, v in members.items():
