@@ -25,8 +25,11 @@ class RPNActionServer(actionlib.ActionServer):
             auto_start=auto_start
         )
 
+    def get_goal_id(self, gh):
+        return gh.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')
+
     def query_kb(self, gh, type, attr):
-        query_service = "/"+gh.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')+"/query"
+        query_service = "/"+self.get_goal_id(gh)+"/query"
 
         return ut.call_service(
             query_service,
@@ -39,7 +42,7 @@ class RPNActionServer(actionlib.ActionServer):
 
 
     def update_kb(self, gh, type, attr, value):
-        update_service = "/"+gh.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')+"/update"
+        update_service = "/"+self.get_goal_id(gh)+"/update"
 
         return ut.call_service(
             update_service,

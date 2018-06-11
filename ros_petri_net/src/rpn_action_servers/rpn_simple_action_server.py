@@ -13,6 +13,8 @@ from petri_net_msgs.srv import PNUpdate, PNUpdateRequest
 
 
 class RPNSimpleActionServer(actionlib.SimpleActionServer):
+    (ALL, LOCAL, REMOTE) = (PNQueryRequest.ALL, PNQueryRequest.LOCAL, PNQueryRequest.REMOTE)
+
     def __init__(self, name, ActionSpec, execute_cb=None, auto_start=True):
         self.ns = name
         actionlib.SimpleActionServer.__init__(self,
@@ -22,8 +24,11 @@ class RPNSimpleActionServer(actionlib.SimpleActionServer):
             auto_start=auto_start
         )
 
+    def get_goal_id(self):
+        return self.current_goal.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')
+
     def query_kb(self, type, attr):
-        query_service = "/"+self.current_goal.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')+"/query"
+        query_service = "/"+self.get_goal_id()+"/query"
 
         return ut.call_service(
             query_service,
@@ -36,7 +41,7 @@ class RPNSimpleActionServer(actionlib.SimpleActionServer):
 
 
     def update_kb(self, type, attr, value):
-        update_service = "/"+self.current_goal.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')+"/update"
+        update_service = "/"+self.get_goal_id()+"/update"
 
         return ut.call_service(
             update_service,
