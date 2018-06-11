@@ -10,13 +10,13 @@ class Executor(object):
         self.nets = {}
 
     def add_net(self, net, marking):
-        net_id = str(uuid.uuid4())
-        self.nets[net_id] = {
+        # net_id = str(uuid.uuid4())
+        self.nets[net.name] = {
             "net": net,
             "marking": marking,
             "thread": None
         }
-        return net_id
+        return net.name
 
     def execute_net(self, net_id):
         if self.nets[net_id]["thread"] is None or not self.nets[net_id]["thread"].is_alive():

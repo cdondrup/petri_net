@@ -6,7 +6,7 @@ import numpy as np
 class PetriNet(PNBaseObject):
     def __init__(self, name, external_kb, initial_knowledge = None):
         super(PetriNet, self).__init__(name)
-        self.external_kb = external_kb(self.id)
+        self.external_kb = external_kb(self.name)
         self._transitions = []
         self._places = []
         self._d_minus = None

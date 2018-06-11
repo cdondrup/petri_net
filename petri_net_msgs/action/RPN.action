@@ -1,3 +1,4 @@
+string net_id
 string domain
 string plan
 ---

@@ -40,7 +40,7 @@ class PetriNetNode(object):
     def goal_cb(self, gh):
         gh.set_accepted()
         goal = gh.get_goal()
-        net, marking = self.create_net_from_plan(json.loads(goal.domain), json.loads(goal.plan))
+        net, marking = self.create_net_from_plan(goal.net_id, json.loads(goal.domain), json.loads(goal.plan))
         Thread(target=self.execute_net, args=(gh, net, marking)).start()
 
     def execute_net(self, gh, net, marking):
@@ -111,7 +111,7 @@ class PetriNetNode(object):
 
         return cp, net
 
-    def create_net_from_plan(self, domain, plan):
+    def create_net_from_plan(self, net_id, domain, plan):
         external_kb = domain["external_knowledge_base"]
         external_kb = getattr(importlib.import_module(external_kb["module"]),external_kb["class"])
 
@@ -132,7 +132,7 @@ class PetriNetNode(object):
         pprint(action_definitions)
 
         gen = Generator()
-        cp, net = gen.create_net("test_net1", external_kb, initial_knowledge=plan["initial_knowledge"])
+        cp, net = gen.create_net(net_id, external_kb, initial_knowledge=plan["initial_knowledge"])
 
         plan = self.__create_op(plan["plan"], members)
         print " --- Plan: --- "
