@@ -3,7 +3,7 @@
 
 import rospy
 from actionlib import ActionServer
-from petri_net_msgs.msg import RPNAction, RPNResult
+from ros_petri_net_msgs.msg import RPNAction, RPNResult
 from pnp_execution.executor import Executor
 import yaml
 import json

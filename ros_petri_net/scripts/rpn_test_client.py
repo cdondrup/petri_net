@@ -3,7 +3,7 @@
 
 import rospy
 from actionlib import ActionClient
-from petri_net_msgs.msg import RPNAction, RPNGoal
+from ros_petri_net_msgs.msg import RPNAction, RPNGoal
 import yaml
 import json
 import uuid

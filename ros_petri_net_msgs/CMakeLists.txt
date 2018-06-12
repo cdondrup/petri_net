@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(petri_net_msgs)
+project(ros_petri_net_msgs)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -62,8 +62,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
-   PNQuery.srv
-   PNUpdate.srv
+   RPNQuery.srv
+   RPNUpdate.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -111,7 +111,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES petri_net_msgs
+#  LIBRARIES ros_petri_net_msgs
 #  CATKIN_DEPENDS actionlib actionlib_msgs message_generation message_runtime std_msgs
 #  DEPENDS system_lib
 )
@@ -129,7 +129,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/petri_net_msgs.cpp
+#   src/${PROJECT_NAME}/ros_petri_net_msgs.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -140,7 +140,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/petri_net_msgs_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/ros_petri_net_msgs_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -197,7 +197,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_petri_net_msgs.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_ros_petri_net_msgs.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -9,14 +9,14 @@ from pnp_kb.queries import Query, LocalQuery, RemoteQuery
 from pnp_kb.updates import Update, LocalUpdate, RemoteUpdate
 from action import ROSAtomicAction
 from copy import deepcopy
-from petri_net_msgs.srv import PNQuery, PNQueryResponse, PNQueryRequest
-from petri_net_msgs.srv import PNUpdate, PNUpdateResponse, PNUpdateRequest
+from ros_petri_net_msgs.srv import RPNQuery, RPNQueryResponse, RPNQueryRequest
+from ros_petri_net_msgs.srv import RPNUpdate, RPNUpdateResponse, RPNUpdateRequest
 
 
 class RPNAtomicAction(ROSAtomicAction):
     def __init__(self, name, params=None):
         super(RPNAtomicAction, self).__init__(name, params)
-        # rospy.Service("~query", PNQuery, self.srv_cb)
+        # rospy.Service("~query", RPNQuery, self.srv_cb)
 
     def srv_cb(self, req):
         pass
@@ -48,14 +48,14 @@ class RPNAtomicAction(ROSAtomicAction):
                     server_finished.set()
 
             def query_cb(req):
-                 q_type = dict(zip((PNQueryRequest.ALL, PNQueryRequest.LOCAL, PNQueryRequest.REMOTE), (Query, LocalQuery, RemoteQuery)))
+                 q_type = dict(zip((RPNQueryRequest.ALL, RPNQueryRequest.LOCAL, RPNQueryRequest.REMOTE), (Query, LocalQuery, RemoteQuery)))
                  result = q_type[req.type](req.attr)(kb, external_kb)
-                 return PNQueryResponse(str(result))
+                 return RPNQueryResponse(str(result))
 
             def update_cb(req):
-                 u_type = dict(zip((PNUpdateRequest.ALL, PNUpdateRequest.LOCAL, PNUpdateRequest.REMOTE), (Update, LocalUpdate, RemoteUpdate)))
+                 u_type = dict(zip((RPNUpdateRequest.ALL, RPNUpdateRequest.LOCAL, RPNUpdateRequest.REMOTE), (Update, LocalUpdate, RemoteUpdate)))
                  u_type[req.type](req.attr, req.value)(kb, external_kb)
-                 return PNUpdateResponse()
+                 return RPNUpdateResponse()
 
             self.client = ActionClient(self.name, self.get_action_type(self.name))
             goal = self.get_goal_type(self.name)()
@@ -67,8 +67,8 @@ class RPNAtomicAction(ROSAtomicAction):
             self.client.wait_for_server()
             self.gh = self.client.send_goal(goal, transition_cb=trans_cb)
             srv_basename = "/"+self.gh.comm_state_machine.action_goal.goal_id.id.replace('/','').replace('-','_').replace('.','_')
-            q_srv = rospy.Service(srv_basename+"/query", PNQuery, query_cb)
-            u_srv = rospy.Service(srv_basename+"/update", PNUpdate, update_cb)
+            q_srv = rospy.Service(srv_basename+"/query", RPNQuery, query_cb)
+            u_srv = rospy.Service(srv_basename+"/update", RPNUpdate, update_cb)
             server_finished.wait()
             result = self.gh.get_result()
             if result != None and result:

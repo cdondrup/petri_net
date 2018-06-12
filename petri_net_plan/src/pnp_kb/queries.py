@@ -5,8 +5,9 @@ from abc import ABCMeta, abstractmethod
 class AbstractAtomicQuery(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, attr):
+    def __init__(self, attr, meta_info=None):
         self.attr = attr
+        self.meta_info = meta_info
 
     @abstractmethod
     def _run(self, kb, external_kb):

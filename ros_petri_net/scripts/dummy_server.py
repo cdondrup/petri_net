@@ -8,9 +8,9 @@ Created on Wed Jul 20 13:42:25 2016
 
 import rospy
 from actionlib_msgs.msg import GoalStatus
-from petri_net_msgs.msg import DummyAction, DummyResult
-from petri_net_msgs.srv import PNQuery
-from petri_net_msgs.srv import PNUpdate
+from ros_petri_net_msgs.msg import DummyAction, DummyResult
+from ros_petri_net_msgs.srv import RPNQuery
+from ros_petri_net_msgs.srv import RPNUpdate
 from rpn_action_servers.rpn_action_server import RPNActionServer
 from rpn_action_servers.rpn_simple_action_server import RPNSimpleActionServer
 from threading import Thread
@@ -36,8 +36,8 @@ class WaitServer(object):
         gh.set_accepted()
         goal = gh.get_goal()
         print "Setting spam to eggs"
-        self._as.update_kb(gh, RPNActionServer.LOCAL, "spam", "eggs")
-        print "Got this from KB:", self._as.query_kb(gh, RPNActionServer.ALL, "spam")
+        self._as.update_kb(gh, RPNActionServer.LOCAL, "spam", "eggs", "meta_info")
+        print "Got this from KB:", self._as.query_kb(gh, RPNActionServer.ALL, "spam", "meta_info")
         print "Waiting for %s seconds" % goal.value
         end = rospy.Time.now().to_sec() + goal.value
         while rospy.Time.now().to_sec() < end and not rospy.is_shutdown() \

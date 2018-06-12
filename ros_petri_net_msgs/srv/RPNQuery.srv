@@ -4,5 +4,6 @@ int32 ALL=2
 
 int32 type
 string attr
-string value
+string meta_info
 ---
+string value

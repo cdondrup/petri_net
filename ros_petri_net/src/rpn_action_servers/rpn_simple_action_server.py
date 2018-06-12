@@ -8,12 +8,12 @@ Created on Fri Jul 22 09:42:29 2016
 import rospy
 import actionlib
 import utils as ut
-from petri_net_msgs.srv import PNQuery, PNQueryRequest
-from petri_net_msgs.srv import PNUpdate, PNUpdateRequest
+from ros_petri_net_msgs.srv import RPNQuery, RPNQueryRequest
+from ros_petri_net_msgs.srv import RPNUpdate, RPNUpdateRequest
 
 
 class RPNSimpleActionServer(actionlib.SimpleActionServer):
-    (ALL, LOCAL, REMOTE) = (PNQueryRequest.ALL, PNQueryRequest.LOCAL, PNQueryRequest.REMOTE)
+    (ALL, LOCAL, REMOTE) = (RPNQueryRequest.ALL, RPNQueryRequest.LOCAL, RPNQueryRequest.REMOTE)
 
     def __init__(self, name, ActionSpec, execute_cb=None, auto_start=True):
         self.ns = name
@@ -27,29 +27,31 @@ class RPNSimpleActionServer(actionlib.SimpleActionServer):
     def get_goal_id(self):
         return self.current_goal.get_goal_id().id.replace('/','').replace('-','_').replace('.','_')
 
-    def query_kb(self, type, attr):
+    def query_kb(self, type, attr, meta_info=None):
         query_service = "/"+self.get_goal_id()+"/query"
 
         return ut.call_service(
             query_service,
-            PNQuery,
-            PNQueryRequest(
+            RPNQuery,
+            RPNQueryRequest(
                 type=type,
-                attr=attr
+                attr=attr,
+                meta_info=meta_info
             )
         )
 
 
-    def update_kb(self, type, attr, value):
+    def update_kb(self, type, attr, value, meta_info=None):
         update_service = "/"+self.get_goal_id()+"/update"
 
         return ut.call_service(
             update_service,
-            PNUpdate,
-            PNUpdateRequest(
+            RPNUpdate,
+            RPNUpdateRequest(
                 type=type,
                 attr=attr,
-                value=value
+                value=value,
+                meta_info=meta_info
             )
         )
 

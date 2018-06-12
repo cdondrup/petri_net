@@ -9,12 +9,16 @@ class KnowledgeBase(AbstractKnowledgeBase):
             for k, v in kwargs.iteritems():
                 self.update(k, v)
 
-    def query(self, variable):
+    def query(self, variable, meta_info=None):
+        if meta_info is None:
+            print "+++ Warning! Meta info field is ignored for local queries. +++"
         print "--- QUERY ---", variable, getattr(self, variable)
 
         return getattr(self, variable)
 
-    def update(self, variable, value):
+    def update(self, variable, value, meta_info=None):
+        if meta_info is None:
+            print "+++ Warning! Meta info field is ignored for local updates. +++"
         setattr(self, variable, value)
 
     def __setattr__(self, name, value):
