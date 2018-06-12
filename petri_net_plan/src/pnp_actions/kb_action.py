@@ -5,7 +5,6 @@ class KBAction(AtomicAction):
     def run(self, kb ,external_kb):
         with self.__mutex__:
             self.params["operation"](kb, external_kb)
-            print kb.query(self.params["result"])
 
     @property
     def succeeded(self):

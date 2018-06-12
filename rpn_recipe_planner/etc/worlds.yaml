@@ -1,0 +1,4 @@
+mummer:
+    domain: domains/domain.yaml
+    recipes:
+        - plans/plan.yaml

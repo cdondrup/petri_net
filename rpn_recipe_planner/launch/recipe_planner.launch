@@ -1,0 +1,13 @@
+<launch>
+  <arg name="worlds_dir" default="$(find rpn_recipe_planner)/etc" />
+  <arg name="worlds_file" default="worlds.yaml" />
+  <arg name="world" default="mummer" />
+
+  <node name="ros_petri_net_node" pkg="ros_petri_net" type="petri_net_node.py" output="screen" respawn="true"/>
+  <node name="recipe_planner" pkg="rpn_recipe_planner" type="recipe_planner.py" output="screen" respawn="true">
+    <param name="worlds_dir" type="string" value="$(arg worlds_dir)"/>
+    <param name="worlds_file" type="string" value="$(arg worlds_file)"/>
+    <param name="world" type="string" value="$(arg world)"/>
+  </node>
+  
+</launch>

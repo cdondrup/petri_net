@@ -5,9 +5,10 @@ from abc import ABCMeta, abstractmethod
 class AbstractAtomicUpdate(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, attr, value):
+    def __init__(self, attr, value, meta_info=None):
         self.attr = attr
         self.value = value
+        self.meta_info = meta_info
 
     @abstractmethod
     def _run(self, kb, external_kb):

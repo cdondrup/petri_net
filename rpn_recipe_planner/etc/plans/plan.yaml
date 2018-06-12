@@ -1,0 +1,4 @@
+task_route_descr:
+    initial_knowledge: {}
+    plan:
+        - test_server: {}

@@ -1,0 +1,34 @@
+instances: &instances
+    - 
+external_knowledge_base:
+    module: "rpn_ros_interface.ros_external_knowledge_base"
+    class:  "ROSExternalKnowledgeBase"
+action_types:
+    BaseAction: &base_action
+        instances: *instances
+    ROSAction: &ros_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.action"
+            class:  "ROSAtomicAction"
+    RPNAction: &rpn_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.rpn_action"
+            class:  "RPNAtomicAction"
+    KBAction: &kb_action
+        <<: *base_action
+        type:
+            module: "pnp_actions.kb_action"
+            class:  "KBAction"
+actions:
+    test_server:
+        <<: *rpn_action
+        params:
+            - "place_frame"
+            - "human_frame"
+    kb_operation:
+        <<: *kb_action
+        params:
+            - "operation"
+
