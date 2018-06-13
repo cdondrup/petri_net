@@ -6,18 +6,24 @@ class KBAction(AtomicAction):
         with self.__mutex__:
             self.params["operation"](kb, external_kb)
 
+    def get_state(self):
+        if self.__mutex__.acquire(False):
+            try:
+                return True # Always succeed
+            except:
+                return False
+            finally:
+                self.__mutex__.release()
+        return False
+
     @property
     def succeeded(self):
-        # Always succeed
-        with self.__mutex__:
-            return True
+        return self.get_state()
 
     @property
     def preempted(self):
-        with self.__mutex__:
-            return False
+        return False
 
     @property
     def failed(self):
-        with self.__mutex__:
-            return False
+        return False

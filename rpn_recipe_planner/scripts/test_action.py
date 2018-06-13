@@ -9,10 +9,6 @@ import json
 
 class TestServer(object):
     def __init__(self, name):
-        self.ontology = {
-            "a coffee shop": ["Costa", "Starbucks"],
-            "coffee shop": ["Costa", "Starbucks"]
-        }
         self._ps = RPNSimpleActionServer(
             name,
             TestAction,
@@ -28,19 +24,14 @@ class TestServer(object):
         self.run = True
         print "started"
         rospy.sleep(1.)
-        goal.place_frame = goal.place_frame.strip()
-        if goal.place_frame in self.ontology:
-            print "TEST SERVER", "disambiguate"
-            # print "TEST SERVER", self._ps.query_controller(status="disambiguation", return_value=json.dumps(self.ontology[goal.place_frame]))
-            rospy.sleep(1.)
         print "TEST SERVER", "clarification.landmark"
-        # print "TEST SERVER", self._ps.query_controller(status="clarification.landmark", return_value="Zizzi")
+        print "TEST SERVER", self._ps.query_kb(meta_info=json.dumps({"status": "clarification.landmark"}), type=RPNSimpleActionServer.REMOTE, attr="Zizzi")
         rospy.sleep(1.)
         print "TEST SERVER", "clarification.route_constraint"
-        # print "TEST SERVER", self._ps.query_controller(status="clarification.route_constraint", return_value="Stairs")
+        print "TEST SERVER", self._ps.query_kb(meta_info=json.dumps({"status": "clarification.route_constraint"}), type=RPNSimpleActionServer.REMOTE, attr="Stairs")
         rospy.sleep(1.)
         print "TEST SERVER", "execute.route_description"
-        # print "TEST SERVER", self._ps.query_controller(status="execute.route_description", return_value=json.dumps([["Starbucks", "right"], ["waypoint 1", "left"], ["waypoint 2", "straight"]]))
+        print "TEST SERVER", self._ps.query_kb(meta_info=json.dumps({"status": "execute.route_description"}), type=RPNSimpleActionServer.REMOTE, attr=json.dumps([["Starbucks", "right"], ["waypoint 1", "left"], ["waypoint 2", "straight"]]))
         rospy.sleep(1.)
         print "TEST SERVER", "ended"
         self._ps.set_succeeded()

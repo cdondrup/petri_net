@@ -23,7 +23,7 @@ class AbstractAtomicQuery(object):
         return self._run(kb, external_kb)
 
     def __str__(self):
-        return "{}({})".format(self.__class__.__name__, str(self.attr))
+        return "{}({}, meta_info={})".format(self.__class__.__name__, str(self.attr), str(self.meta_info))
 
     def __repr__(self):
         return self.__str__()
@@ -31,16 +31,16 @@ class AbstractAtomicQuery(object):
 
 class LocalQuery(AbstractAtomicQuery):
     def _run(self, kb, external_kb):
-        return kb.query(self._call_op(self.attr, kb, external_kb))
+        return kb.query(self._call_op(self.attr, kb, external_kb), self.meta_info)
 
 
 class RemoteQuery(AbstractAtomicQuery):
     def _run(self, kb, external_kb):
-        return external_kb.query(self._call_op(self.attr, kb, external_kb))
+        return external_kb.query(self._call_op(self.attr, kb, external_kb), self.meta_info)
 
 
 class Query(AbstractAtomicQuery):
     def _run(self, kb, external_kb):
         r = kb.query(self._call_op(self.attr, kb, external_kb))
-        return r if r is not None else external_kb.query(self._call_op(self.attr, kb, external_kb))
+        return r if r is not None else external_kb.query(self._call_op(self.attr, kb, external_kb), self.meta_info)
 

@@ -4,6 +4,8 @@ import rospy
 from actionlib import ActionClient
 from dialogue_arbiter_action.da_plugin_server import DAPluginServer
 from rpn_recipe_planner_msgs.msg import RPNRecipePlannerAction
+from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryResponse
+from rpn_recipe_planner_msgs.srv import RPInform, RPInformResponse
 from ros_petri_net_msgs.msg import RPNAction, RPNGoal
 import json
 import yaml
@@ -37,6 +39,7 @@ class Server(object):
         self.name = name
         self.domain = domain
         self.plan = plan
+        self.services = {}
         self._ps = DAPluginServer(
             name,
             goal_cb=self.goal_cb,
@@ -52,8 +55,16 @@ class Server(object):
         print goal
         if goal.params != '':
             params = json.loads(goal.params)
+            for k in params.keys():
+                try:
+                    params[k] = params[k].strip()
+                except:
+                    pass
             self.plan["initial_knowledge"].update(params)
         print self.plan
+        self.services[goal.id] = [
+            rospy.Service("/"+goal.id.replace('-','_')+"/query", RPQuery, lambda x: self.query_cb(x, goal.id))
+        ]
         rpn = self.client.send_goal(
             RPNGoal(
                 net_id=goal.id,
@@ -65,7 +76,13 @@ class Server(object):
 
     def trans_cb(self, gh):
         if gh.get_goal_status() in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED):
+            for s in self.services[gh.get_goal().id]:
+                s.shutdown()
             gh.set_succeeded()
+
+    def query_cb(self, req, net_id):
+        r = self._ps.query_controller(req.status, req.return_value, net_id)
+        return RPQueryResponse(r.result)
 
 if __name__ == "__main__":
     rospy.init_node("recipe_planner")

@@ -1,4 +1,13 @@
 task_route_descr:
     initial_knowledge: {}
     plan:
+        - check_shop_instance:
+            operation: 
+                LocalUpdate: 
+                    - "place_frame"
+                    - RemoteQuery:
+                        - Operation:
+                            - "getitem"
+                            - [RemoteQuery: "ontology", LocalQuery: "place_frame"]
+                        - {"status": "disambiguation"}
         - test_server: {}

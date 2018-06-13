@@ -1,8 +1,8 @@
 instances: &instances
     - 
 external_knowledge_base:
-    module: "rpn_ros_interface.ros_external_knowledge_base"
-    class:  "ROSExternalKnowledgeBase"
+    module: "rpn_rp_kb.rpn_rp_knowledge_base"
+    class:  "RPKnowledgeBase"
 action_types:
     BaseAction: &base_action
         instances: *instances
@@ -27,8 +27,14 @@ actions:
         params:
             - "place_frame"
             - "human_frame"
-    kb_operation:
+    check_shop_instance:
         <<: *kb_action
         params:
             - "operation"
+        preconditions:
+            and:
+                - Comparison: ["contains", [RemoteQuery: "ontology", LocalQuery: "place_frame"]]
+        effects:
+            and:
+                - Comparison: ["contains", [RemoteQuery: "shops", LocalQuery: "place_frame"]]
 

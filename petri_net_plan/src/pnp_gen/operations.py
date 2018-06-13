@@ -45,7 +45,10 @@ class Operation(AbstractOperation):
         values = []
         for q in self.queries:
             values.append(self.execute_query(q))
-        return getattr(operator, self.operator)(*values)
+        r = getattr(operator, self.operator)(*values)
+        print "--- Operation ---: {} = {}".format(str(self), str(r))
+        print values
+        return r
 
     def __str__(self):
         return "{operator}({queries})".format(operator=self.operator, queries=', '.join(map(str, self.queries)))

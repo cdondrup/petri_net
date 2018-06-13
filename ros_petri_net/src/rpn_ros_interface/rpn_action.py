@@ -48,14 +48,15 @@ class RPNAtomicAction(ROSAtomicAction):
                     server_finished.set()
 
             def query_cb(req):
-                 q_type = dict(zip((RPNQueryRequest.ALL, RPNQueryRequest.LOCAL, RPNQueryRequest.REMOTE), (Query, LocalQuery, RemoteQuery)))
-                 result = q_type[req.type](req.attr)(kb, external_kb)
-                 return RPNQueryResponse(str(result))
+                q_type = dict(zip((RPNQueryRequest.ALL, RPNQueryRequest.LOCAL, RPNQueryRequest.REMOTE), (Query, LocalQuery, RemoteQuery)))
+                q = q_type[req.type](req.attr, req.meta_info)
+                result = q(kb, external_kb)
+                return RPNQueryResponse(str(result))
 
             def update_cb(req):
-                 u_type = dict(zip((RPNUpdateRequest.ALL, RPNUpdateRequest.LOCAL, RPNUpdateRequest.REMOTE), (Update, LocalUpdate, RemoteUpdate)))
-                 u_type[req.type](req.attr, req.value)(kb, external_kb)
-                 return RPNUpdateResponse()
+                u_type = dict(zip((RPNUpdateRequest.ALL, RPNUpdateRequest.LOCAL, RPNUpdateRequest.REMOTE), (Update, LocalUpdate, RemoteUpdate)))
+                u_type[req.type](req.attr, req.value, req.meta_info)(kb, external_kb)
+                return RPNUpdateResponse()
 
             self.client = ActionClient(self.name, self.get_action_type(self.name))
             goal = self.get_goal_type(self.name)()

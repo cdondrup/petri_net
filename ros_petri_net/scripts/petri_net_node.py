@@ -66,7 +66,7 @@ class PetriNetNode(object):
         b = []; a = []
 
         try:
-            b.append(Before(BooleanAssertion(ad["preconditions"], False), Recovery.SKIP_ACTION))
+            b.append(Before(BooleanAssertion(ad["preconditions"], False), Recovery.FAIL))
         except KeyError:
             pass
 
