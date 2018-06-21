@@ -27,7 +27,10 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
                     pass
 
                 if not isinstance(variable, (str, unicode)):
-                    variable = json.dumps(variable)
+                    try:
+                        variable = json.dumps(variable)
+                    except (AttributeError, TypeError) as e:
+                        print e
 
                 r = ut.call_service(
                     "/"+self.net_id.replace('-','_')+"/query",
@@ -37,13 +40,14 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
                         return_value=variable
                     )
                 )
+                print r
                 try:
                     return json.loads(r.result)
                 except ValueError:
                     return r.result
 
     def update(self, variable, value, meta_info=None):
-        print "+++ EXTERNAL UPDATE +++", variable, value
+        print "+++ UPDATE +++", variable, value
         return None
 
 

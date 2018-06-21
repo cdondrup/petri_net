@@ -101,7 +101,7 @@ class PetriNetNode(object):
                 for a in loop["actions"]:
                     acts.append(self.__create_action(a, action_definitions))
                 cond = BooleanAssertion(loop["condition"], True)
-                cp, net = gen.add_loop(net, cp, acts, cond)
+                cp, net = gen.add_while_loop(net, cp, acts, cond)
             elif "concurrent_actions" in action:
                 a = self.__create_concurrent_actions(action, action_definitions)
                 cp, net = gen.add_concurrent_actions(net, cp, a)

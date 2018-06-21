@@ -20,6 +20,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         if meta_info is not None:
             print "+++ Warning! Meta info field is ignored for local updates. +++"
         setattr(self, variable, value)
+        print "--- UPDATE ---", variable, getattr(self, variable)
 
     def __setattr__(self, name, value):
         with self.lock:

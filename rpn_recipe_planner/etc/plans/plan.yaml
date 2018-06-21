@@ -1,5 +1,8 @@
 task_route_descr:
-    initial_knowledge: {}
+    initial_knowledge:
+        route_constraints:
+            - "Stairs"
+            - "Escalators"
     plan:
         - check_shop_instance:
             operation: 
@@ -10,4 +13,16 @@ task_route_descr:
                             - "getitem"
                             - [RemoteQuery: "ontology", LocalQuery: "place_frame"]
                         - {"status": "disambiguation"}
-        - test_server: {}
+        - route_generation: {}
+        - while:
+            condition: {Comparison: ["ne", [LocalQuery: "route_success", true]]}
+            actions:
+                - filter_routes: {}
+                - kb_operation:
+                    operation:
+                        LocalUpdate:
+                            - "route_success"
+                            - not:
+                                RemoteQuery:
+                                    - LocalQuery: "route"
+                                    - {"status": "execute.route_description"}

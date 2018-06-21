@@ -11,6 +11,7 @@ from action import ROSAtomicAction
 from copy import deepcopy
 from ros_petri_net_msgs.srv import RPNQuery, RPNQueryResponse, RPNQueryRequest
 from ros_petri_net_msgs.srv import RPNUpdate, RPNUpdateResponse, RPNUpdateRequest
+import json
 
 
 class RPNAtomicAction(ROSAtomicAction):
@@ -40,18 +41,14 @@ class RPNAtomicAction(ROSAtomicAction):
             def trans_cb(gh):
                 print "{}({}): changed state to: {}".format(self.name, ', '.join(self.params), gh.get_goal_status())
                 if gh.get_goal_status() in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED):
-                    result = gh.get_result()
-                    if result != None and result:
-                        for slot in result.__slots__:
-                            res = getattr(result,slot)
-                            kb.update(slot, res)
                     server_finished.set()
 
             def query_cb(req):
                 q_type = dict(zip((RPNQueryRequest.ALL, RPNQueryRequest.LOCAL, RPNQueryRequest.REMOTE), (Query, LocalQuery, RemoteQuery)))
                 q = q_type[req.type](req.attr, req.meta_info)
                 result = q(kb, external_kb)
-                return RPNQueryResponse(str(result))
+                result = json.dumps(result) if not isinstance(result, (str, unicode)) else result
+                return RPNQueryResponse(result)
 
             def update_cb(req):
                 u_type = dict(zip((RPNUpdateRequest.ALL, RPNUpdateRequest.LOCAL, RPNUpdateRequest.REMOTE), (Update, LocalUpdate, RemoteUpdate)))

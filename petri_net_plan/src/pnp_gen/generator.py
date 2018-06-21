@@ -18,6 +18,7 @@ class Generator(object):
         self.__kb = KnowledgeBase()
         self.__place_counter = 0
         self.__trans_counter = 0
+        self.__loop_counter = 0
 
     def create_net(self, name, external_kb, initial_knowledge=None):
         p = Place("Init")
@@ -71,13 +72,14 @@ class Generator(object):
         net.add_place(join_p)
         return join_p, net
 
-    def add_loop(self, net, current_place, actions, query):
-        start_place = Place("Loop.start")
-        end_place = Place("Loop.finished")
+    def add_while_loop(self, net, current_place, actions, query):
+        self.__loop_counter += 1
+        start_place = Place("Loop{}.start".format(str(self.__loop_counter)))
+        end_place = Place("Loop{}.finished".format(str(self.__loop_counter)))
         net.add_place(start_place)
         net.add_place(end_place)
         net.add_transition(self.create_transition(
-            "Loop.start",
+            "Loop{}.start".format(str(self.__loop_counter)),
             query=query,
             incoming_arcs=[Arc(place=current_place)],
             outgoing_arcs=[Arc(place=start_place)]
@@ -85,7 +87,7 @@ class Generator(object):
         query = deepcopy(query)
         query.invert()
         net.add_transition(self.create_transition(
-            "Loop.end",
+            "Loop{}.end".format(str(self.__loop_counter)),
             query=query,
             incoming_arcs=[Arc(place=current_place)],
             outgoing_arcs=[Arc(place=end_place)]

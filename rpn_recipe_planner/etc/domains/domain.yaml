@@ -37,4 +37,23 @@ actions:
         effects:
             and:
                 - Comparison: ["contains", [RemoteQuery: "shops", LocalQuery: "place_frame"]]
+    route_generation:
+        <<: *rpn_action
+        params:
+            - "place_frame"
+        preconditions:
+            and:
+                Exists: [LocalQuery: "place_frame"]
+        effects:
+            and:
+                Exists: [LocalQuery: "route_array"]
+    filter_routes:
+        <<: *rpn_action
+        params:
+            - "route_constraints"
+            - "route_array"
+    kb_operation:
+        <<: *kb_action
+        params:
+            - "route"
 

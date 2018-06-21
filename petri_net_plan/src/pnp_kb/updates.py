@@ -32,16 +32,16 @@ class AbstractAtomicUpdate(object):
 
 class LocalUpdate(AbstractAtomicUpdate):
     def _run(self, kb, external_kb):
-        kb.update(self.attr, self._call_op(self.value, kb, external_kb))
+        kb.update(self.attr, self._call_op(self.value, kb, external_kb), meta_info=None)
 
 
 class RemoteUpdate(AbstractAtomicUpdate):
     def _run(self, kb, external_kb):
-        external_kb.update(self.attr, self._call_op(self.value, kb, external_kb))
+        external_kb.update(self.attr, self._call_op(self.value, kb, external_kb), meta_info=None)
 
 
 class Update(AbstractAtomicUpdate):
     def _run(self, kb, external_kb):
         kb.update(self.attr, self._call_op(self.value, kb, external_kb))
-        external_kb.update(self.attr, self._call_op(self.value, kb, external_kb))
+        external_kb.update(self.attr, self._call_op(self.value, kb, external_kb), meta_info=None)
 
