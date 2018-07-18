@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import rospy
 from actionlib import ActionClient
+from actionlib_msgs.msg import GoalStatus
 from dialogue_arbiter_action.da_plugin_server import DAPluginServer
 from rpn_recipe_planner_msgs.msg import RPNRecipePlannerAction
 from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryResponse
@@ -40,6 +41,8 @@ class Server(object):
         self.domain = domain
         self.plan = plan
         self.services = {}
+        self.goal_handles = {}
+        self.rpn = {}
         self._ps = DAPluginServer(
             name,
             goal_cb=self.goal_cb,
@@ -65,7 +68,8 @@ class Server(object):
         self.services[goal.id] = [
             rospy.Service("/"+goal.id.replace('-','_')+"/query", RPQuery, lambda x: self.query_cb(x, goal.id))
         ]
-        rpn = self.client.send_goal(
+        self.goal_handles[goal.id] = gh
+        self.rpn[goal.id] = self.client.send_goal(
             RPNGoal(
                 net_id=goal.id,
                 domain=json.dumps(self.domain),
@@ -75,10 +79,19 @@ class Server(object):
         )
 
     def trans_cb(self, gh):
+        print self.services
         if gh.get_goal_status() in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED):
-            for s in self.services[gh.get_goal().id]:
-                s.shutdown()
-            gh.set_succeeded()
+            net_id = gh.comm_state_machine.action_goal.goal.net_id
+            try:
+                for s in self.services[net_id]:
+                    s.shutdown()
+                self.goal_handles[net_id].set_succeeded()
+                del self.services[net_id]
+                del self.goal_handles[net_id]
+                del self.rpn[net_id]
+            except KeyError:
+                rospy.logwarn("No net with id '{}' currently active.".format(net_id))
+
 
     def query_cb(self, req, net_id):
         r = self._ps.query_controller(req.status, req.return_value, net_id)
