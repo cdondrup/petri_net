@@ -9,9 +9,7 @@ task_route_descr:
                 LocalUpdate: 
                     - "place_frame"
                     - RemoteQuery:
-                        - Operation:
-                            - "getitem"
-                            - [RemoteQuery: "ontology", LocalQuery: "place_frame"]
+                        - RemoteQuery: [LocalQuery: "place_frame", {onto_action: "getType"}]
                         - {"status": "disambiguation"}
         - route_generation: {}
         - while:

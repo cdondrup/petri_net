@@ -33,10 +33,10 @@ actions:
             - "operation"
         preconditions:
             and:
-                - Comparison: ["contains", [RemoteQuery: "ontology", LocalQuery: "place_frame"]]
+                - Comparison: ["contains", [RemoteQuery: ["place", {onto_type: "class", onto_action: "getDown"}], LocalQuery: "place_frame"]]
         effects:
             and:
-                - Comparison: ["contains", [RemoteQuery: "shops", LocalQuery: "place_frame"]]
+                - Comparison: ["contains", [RemoteQuery: ["shop", {onto_action: "getType"}], LocalQuery: "place_frame"]]
     route_generation:
         <<: *rpn_action
         params:
