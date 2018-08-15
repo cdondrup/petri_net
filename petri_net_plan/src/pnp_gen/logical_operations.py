@@ -20,7 +20,7 @@ class AbstractLogicalOperation(object):
         return self.__str__()
 
     def __str__(self):
-        return ' {} '.join(map(str, self.operations)).format(self.__class__.__name__.lower().replace('logical',''))
+        return ' {} '.join(map(lambda x: x.replace('{','{{').replace('}','}}'), map(str, self.operations))).format(self.__class__.__name__.lower().replace('logical',''))
 
 
 class LogicalAnd(AbstractLogicalOperation):
