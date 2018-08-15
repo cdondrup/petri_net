@@ -10,6 +10,7 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
         super(RPKnowledgeBase, self).__init__(net_id)
         # self.shops = ["Costa", "Starbucks"]
         self.ontology_srv = "/ontologenius/"
+        self.call_ontology("actions", "close", "")
         # self.ontology = {
             # "a coffee shop": self.shops,
             # "coffee shop": self.shops
