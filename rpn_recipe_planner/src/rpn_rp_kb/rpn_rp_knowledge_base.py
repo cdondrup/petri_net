@@ -1,6 +1,7 @@
 from pnp_kb.external_knowledge_base import ExternalKnowledgeBase
 import utils as ut
 from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryRequest
+from rpn_recipe_planner_msgs.srv import RPInform, RPInformRequest
 from ontologenius.srv import OntologeniusService, OntologeniusServiceRequest
 import json
 
@@ -94,7 +95,26 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
             return r.result
 
     def update(self, variable, value, meta_info=None):
-        print "+++ UPDATE +++", variable, value
+        if meta_info is None:
+            meta_info = {}
+        else:
+            try:
+                meta_info = json.loads(meta_info)
+            except:
+                pass
+
+        if variable == "USER":
+            print "+++ USER UPDATE +++", variable, value, meta_info
+            r = ut.call_service(
+                "/"+self.net_id.replace('-','_')+"/inform",
+                RPInform,
+                RPInformRequest(
+                    return_value=value,
+                    **meta_info
+                )
+            )
+        else:
+            raise AttributeError("Other updates apart from informing the user are not supported at the moment.")
         return None
 
 

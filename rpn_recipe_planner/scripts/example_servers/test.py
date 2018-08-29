@@ -25,13 +25,13 @@ class TestServer(object):
         print "started"
         rospy.sleep(1.)
         print "TEST SERVER", "clarification.landmark"
-        print "TEST SERVER", self._ps.query_kb(meta_info=json.dumps({"status": "clarification.landmark"}), type=RPNSimpleActionServer.REMOTE, attr="Zizzi")
+        print "TEST SERVER", self._ps.query_kb(meta_info=json.dumps({"status": "clarification.landmark"}), type=RPNSimpleActionServer.QUERY_REMOTE, attr="Zizzi")
         rospy.sleep(1.)
         print "TEST SERVER", "clarification.route_constraint"
-        print "TEST SERVER", self._ps.query_kb(meta_info=json.dumps({"status": "clarification.route_constraint"}), type=RPNSimpleActionServer.REMOTE, attr="Stairs")
+        print "TEST SERVER", self._ps.query_kb(meta_info=json.dumps({"status": "clarification.route_constraint"}), type=RPNSimpleActionServer.QUERY_REMOTE, attr="Stairs")
         rospy.sleep(1.)
         print "TEST SERVER", "execute.route_description"
-        print "TEST SERVER", self._ps.query_kb(meta_info=json.dumps({"status": "execute.route_description"}), type=RPNSimpleActionServer.REMOTE, attr=json.dumps([["Starbucks", "right"], ["waypoint 1", "left"], ["waypoint 2", "straight"]]))
+        print "TEST SERVER", self._ps.query_kb(meta_info=json.dumps({"status": "execute.route_description"}), type=RPNSimpleActionServer.QUERY_REMOTE, attr=json.dumps([["Starbucks", "right"], ["waypoint 1", "left"], ["waypoint 2", "straight"]]))
         rospy.sleep(1.)
         print "TEST SERVER", "ended"
         self._ps.set_succeeded()

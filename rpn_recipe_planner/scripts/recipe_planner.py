@@ -66,7 +66,8 @@ class Server(object):
             self.plan["initial_knowledge"].update(params)
         print self.plan
         self.services[goal.id] = [
-            rospy.Service("/"+goal.id.replace('-','_')+"/query", RPQuery, lambda x: self.query_cb(x, goal.id))
+            rospy.Service("/"+goal.id.replace('-','_')+"/query", RPQuery, lambda x: self.query_cb(x, goal.id)),
+            rospy.Service("/"+goal.id.replace('-','_')+"/inform", RPInform, lambda x: self.inform_cb(x, goal.id))
         ]
         self.goal_handles[goal.id] = gh
         self.rpn[goal.id] = self.client.send_goal(
@@ -92,12 +93,16 @@ class Server(object):
             except KeyError:
                 rospy.logwarn("No net with id '{}' currently active.".format(net_id))
 
-
     def query_cb(self, req, net_id):
         r = self._ps.query_controller(req.status, req.return_value, net_id)
         return RPQueryResponse(r.result)
+
+    def inform_cb(self, req, net_id):
+        self._ps.inform_controller(req.status, req.return_value, net_id)
+        return RPInformResponse()
 
 if __name__ == "__main__":
     rospy.init_node("recipe_planner")
     r = RecipePlanner(rospy.get_name())
     rospy.spin()
+

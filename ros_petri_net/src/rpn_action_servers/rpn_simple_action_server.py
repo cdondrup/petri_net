@@ -13,7 +13,8 @@ from ros_petri_net_msgs.srv import RPNUpdate, RPNUpdateRequest
 
 
 class RPNSimpleActionServer(actionlib.SimpleActionServer):
-    (ALL, LOCAL, REMOTE) = (RPNQueryRequest.ALL, RPNQueryRequest.LOCAL, RPNQueryRequest.REMOTE)
+    (QUERY_ALL, QUERY_LOCAL, QUERY_REMOTE) = (RPNQueryRequest.ALL, RPNQueryRequest.LOCAL, RPNQueryRequest.REMOTE)
+    (UPDATE_ALL, UPDATE_LOCAL, UPDATE_REMOTE) = (RPNUpdateRequest.ALL, RPNUpdateRequest.LOCAL, RPNUpdateRequest.REMOTE)
 
     def __init__(self, name, ActionSpec, execute_cb=None, auto_start=True):
         self.ns = name

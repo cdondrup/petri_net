@@ -36,8 +36,8 @@ class WaitServer(object):
         gh.set_accepted()
         goal = gh.get_goal()
         print "Setting spam to eggs"
-        self._as.update_kb(gh, RPNActionServer.LOCAL, "spam", "eggs", "meta_info")
-        print "Got this from KB:", self._as.query_kb(gh, RPNActionServer.ALL, "spam", "meta_info")
+        self._as.update_kb(gh, RPNActionServer.QUERY_LOCAL, "spam", "eggs", "meta_info")
+        print "Got this from KB:", self._as.query_kb(gh, RPNActionServer.QUERY_ALL, "spam", "meta_info")
         print "Waiting for %s seconds" % goal.value
         end = rospy.Time.now().to_sec() + goal.value
         while rospy.Time.now().to_sec() < end and not rospy.is_shutdown() \
@@ -53,8 +53,8 @@ class WaitServer(object):
     def simple_execute(self, gh):
         goal = gh
         print "Setting spam to eggs"
-        self._as.update_kb(RPNActionServer.LOCAL, "spam", "eggs")
-        print "Got this from KB:", self._as.query_kb(RPNActionServer.ALL, "spam")
+        self._as.update_kb(RPNActionServer.QUERY_LOCAL, "spam", "eggs")
+        print "Got this from KB:", self._as.query_kb(RPNActionServer.QUERY_ALL, "spam")
         print "Waiting for %s seconds" % goal.value
         end = rospy.Time.now().to_sec() + goal.value
         while rospy.Time.now().to_sec() < end and not rospy.is_shutdown():
