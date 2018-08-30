@@ -19,7 +19,7 @@ class TestServer(object):
 
     def execute_cb(self, goal):
         print "Goal", goal
-        self._ps.update_kb(meta_info=json.dumps({"status": "verbalisation.robot_move"}), type=RPNSimpleActionServer.UPDATE_REMOTE, attr="USER", value="")
+        # self._ps.update_kb(meta_info=json.dumps({"status": "verbalisation.robot_move"}), type=RPNSimpleActionServer.UPDATE_REMOTE, attr="USER", value="")
         res = FilterRoutesResult()
         res.route = None
         for route in deepcopy(goal.route_array):
