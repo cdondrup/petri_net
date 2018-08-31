@@ -1,8 +1,9 @@
 task_route_descr:
     initial_knowledge:
         route_constraints:
-            - "Stairs"
-            - "Escalators"
+            - "stair"
+            - "escalator"
+            - "elevator"
     plan:
         - check_shop_instance:
             operation: 
@@ -17,11 +18,4 @@ task_route_descr:
             actions:
                 - filter_routes: {}
                 - kb_operation: {operation: {RemoteUpdate: ["USER", "", {"status": "verbalisation.robot_move"}]}}
-                - kb_operation:
-                    operation:
-                        LocalUpdate:
-                            - "route_success"
-                            - not:
-                                RemoteQuery:
-                                    - LocalQuery: "route"
-                                    - {"status": "execute.route_description"}
+                - route_description_generation: {}

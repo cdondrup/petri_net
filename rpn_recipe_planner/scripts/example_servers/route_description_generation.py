@@ -1,8 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import rospy
-from rpn_recipe_planner_msgs.msg import ExampleRouteGenerationAction, ExampleRouteGenerationResult
-from rpn_recipe_planner_msgs.msg import SemanticRoute as SRmsg, SemanticRouteLocation
+from rpn_recipe_planner_msgs.msg import ExampleRouteDescriptionGenerationAction, ExampleRouteDescriptionGenerationResult
 from rpn_action_servers.rpn_simple_action_server import RPNSimpleActionServer
 from semantic_route_description.srv import SemanticRoute, SemanticRouteRequest
 from ontologenius.srv import OntologeniusService, OntologeniusServiceRequest
@@ -11,13 +10,11 @@ import numpy as np
 from pprint import pprint
 
 
-START_LOCATION = "robot_infodesk"
-
 class TestServer(object):
     def __init__(self, name):
         self._ps = RPNSimpleActionServer(
             name,
-            ExampleRouteGenerationAction,
+            ExampleRouteDescriptionGenerationAction,
             execute_cb=self.execute_cb,
             auto_start=False
         )
@@ -28,51 +25,51 @@ class TestServer(object):
     def execute_cb(self, goal):
         self.cache = {}
         print goal
+        route = goal.route.route
+        route = map(lambda x: {"id": x.id, "name": x.name, "type": x.type}, route)
         print "started"
-        try:
-            req = SemanticRouteRequest(
-                from_=START_LOCATION,
-                to=self.call_onto_service(
-                    action="find",
-                    param=goal.place_frame
-                )[0],
-                persona="lambda"
-            )
-        except IndexError:
-            self._ps.set_aborted()
-        else:
-            res = self.call_route_service(req)
-            rd = dict(
-                zip(
-                    res.costs,
-                    map(
-                        lambda x: map(
-                            lambda y: {
-                                "id": y,
-                                "name": self.__get_name(y),
-                                "type": self.__get_type(y)
-                            },
-                            x.route
-                        ),
-                        res.routes)
+
+        route_descr = []
+
+        for place1, path, place2 in zip(route[:-2:2], route[1:-1:2], route[2::2]):
+            print place1
+            print path
+            print place2
+            print "~~~"
+            if self.__is_corridor(path):
+                end = self.__is_at_edge_of_corridor(place2, path)
+                print "END", end
+                dir_ = self.__get_direction(place2, path, place1)
+                print "DIR", dir_
+                route_descr.append(
+                    {"motion": {
+                        "area": "the corridor",
+                        "direction": dir_,
+                        "distance": "at the end of" if end else "along",
+                        "theme": "you",
+                        "source": self.__get_name(place1)
+                    }}
                 )
-            )
-            costs = np.array(res.costs)
-            costs.sort()
-            pprint(rd)
-
-            r = ExampleRouteGenerationResult()
-
-            for c in costs:
-                print "#########"
-                s = SRmsg()
-                for p in rd[c]:
-                    s.route.append(
-                        SemanticRouteLocation(**p)
+            else:
+                cl = self.get_closest_landmark(place2, path)
+                print "OPS", cl
+                if self.__is_interface(place2):
+                    route_descr.append(
+                        {"taking": {
+                            "agent": "user",
+                            "source": cl[0] + (" of the " if self.__requires_article(cl[2]) else " of ") + cl[1],  # TODO: Check if name or object to add article
+                            "theme": self.__get_name(place2)
+                        }}
                     )
-                r.route_array.append(s)
+            print "---"
 
-            self._ps.set_succeeded(r)
+        print route_descr
+
+        r = ExampleRouteDescriptionGenerationResult(True)
+        self._ps.set_succeeded(r)
+
+    def __requires_article(self, place):
+        return "toilets" in self.__get_type(place) or "signpost" in self.__get_type(place) or "atm" in self.__get_type(place)
 
     def __get_direction(self, place, corridor, pplace):
         pp = self.__get_with(pplace, corridor)
@@ -129,12 +126,12 @@ class TestServer(object):
             if left:
                 if self.__is_landmark(left[0]):
                     if specific_place is None or left[0] == specific_place:
-                        return "right", self.__get_name(left[0])
+                        return "right", self.__get_name(left[0]), left[0]
                 left = self.__get_on(left[0], LEFT)
             if right:
                 if self.__is_landmark(right[0]):
                     if specific_place is None or right[0] == specific_place:
-                        return "left", self.__get_name(right[0])
+                        return "left", self.__get_name(right[0]), right[0]
                 right = self.__get_on(right[0], RIGHT)
 
         return None
@@ -176,9 +173,12 @@ class TestServer(object):
 
     def __get_name(self, p):
         try:
-            return p["name"]
+            name = p["name"]
         except:
-            return self.__get_info("getName", p)[0]
+            name = self.__get_info("getName", p)[0]
+        if name.find("toilet") >= 0:
+            return "toilet sign"
+        return name
 
     def __is_landmark(self, place):
         return self.__is_shop(place) or "toilets" in self.__get_type(place) or "signpost" in self.__get_type(place)
@@ -231,6 +231,6 @@ class TestServer(object):
                 return s(req)
 
 if __name__ == "__main__":
-    rospy.init_node("route_generation")
+    rospy.init_node("route_description_generation")
     t = TestServer(rospy.get_name())
     rospy.spin()

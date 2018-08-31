@@ -23,22 +23,29 @@ class TestServer(object):
         res = FilterRoutesResult()
         res.route = None
         for route in deepcopy(goal.route_array):
-            for c in deepcopy(goal.route_constraints):
-                if c in route.string_array:
-                    qr = self._ps.query_kb(meta_info=json.dumps({"status": "clarification.route_constraint"}), type=RPNSimpleActionServer.QUERY_REMOTE, attr=c)
-                    print qr
-                    if json.loads(qr.value):
-                        del goal.route_constraints[goal.route_constraints.index(c)]
-                        res.route = route.string_array
-                        break
-                    else:
-                        del goal.route_array[goal.route_array.index(route)]
-            if res.route is not None:
+            good = True
+            for l in route.route:
+                for c in deepcopy(goal.route_constraints):
+                    if c in l.type:
+                        qr = self._ps.query_kb(meta_info=json.dumps({"status": "clarification.route_constraint"}), type=RPNSimpleActionServer.QUERY_REMOTE, attr=l.name)
+                        print qr
+                        if json.loads(qr.value):
+                            del goal.route_constraints[goal.route_constraints.index(c)]
+                        else:
+                            del goal.route_array[goal.route_array.index(route)]
+                            good = False
+                            break
+                if not good:
+                    break
+
+            if good:
+                res.route = route.route
                 break
 
         if res.route is None:
-            res.route = goal.route_array[-1].string_array
+            res.route = goal.route_array[-1].route
 
+        print type(res.route)
         res.route_array = goal.route_array
         res.route_constraints = goal.route_constraints
         print "Res", res

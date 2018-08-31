@@ -47,6 +47,10 @@ actions:
         effects:
             and:
                 Exists: [LocalQuery: "route_array"]
+    route_description_generation:
+        <<: *rpn_action
+        params:
+            - "route"
     filter_routes:
         <<: *rpn_action
         params:

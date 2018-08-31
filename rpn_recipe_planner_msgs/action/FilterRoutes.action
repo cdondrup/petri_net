@@ -1,7 +1,7 @@
 string[] route_constraints
-StringArray[] route_array
+SemanticRoute[] route_array
 ---
 string[] route_constraints
-StringArray[] route_array
-string[] route
+SemanticRoute[] route_array
+SemanticRouteLocation[] route
 ---
