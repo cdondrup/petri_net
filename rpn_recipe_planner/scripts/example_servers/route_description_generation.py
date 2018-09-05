@@ -2,27 +2,36 @@
 # -*- coding: utf-8 -*-
 import rospy
 from rpn_recipe_planner_msgs.msg import ExampleRouteDescriptionGenerationAction, ExampleRouteDescriptionGenerationResult
-from rpn_action_servers.rpn_simple_action_server import RPNSimpleActionServer
+from rpn_action_servers.rpn_action_server import RPNActionServer
 from semantic_route_description.srv import SemanticRoute, SemanticRouteRequest
 from ontologenius.srv import OntologeniusService, OntologeniusServiceRequest
 import json
 import numpy as np
 from pprint import pprint
+from threading import Thread
 
 
 class TestServer(object):
     def __init__(self, name):
-        self._ps = RPNSimpleActionServer(
+        self._ps = RPNActionServer(
             name,
             ExampleRouteDescriptionGenerationAction,
-            execute_cb=self.execute_cb,
+            self.goal_cb,
             auto_start=False
         )
-        self._ps.register_preempt_callback(self.preempt_cb)
+        # self._ps.register_preempt_callback(self.preempt_cb)
+        self.threads = {}
         self.cache = {}
         self._ps.start()
 
-    def execute_cb(self, goal):
+    def goal_cb(self, gh):
+        gh.set_accepted()
+        goal = gh.get_goal()
+        self.threads[gh] = Thread(target=self.execute, args=(gh, goal))
+        self.threads[gh].start()
+
+    def execute(self, gh, goal):
+        self.close_ontology()
         self.cache = {}
         print goal
         route = goal.route.route
@@ -31,42 +40,71 @@ class TestServer(object):
 
         route_descr = []
 
-        for place1, path, place2 in zip(route[:-2:2], route[1:-1:2], route[2::2]):
-            print place1
-            print path
-            print place2
+        route_list = zip(route[:-2:2], route[1:-1:2], route[2::2])
+        for idx, (source, path, target) in enumerate(route_list):
+            print idx
+            print "src", source
+            print "pat", path
+            print "trg", target
             print "~~~"
+            cl = self.get_closest_landmark(target, path)
+            print "CLM", cl
             if self.__is_corridor(path):
-                end = self.__is_at_edge_of_corridor(place2, path)
+                end = self.__is_at_edge_of_corridor(target, path)
+                target["end"] = end
                 print "END", end
-                dir_ = self.__get_direction(place2, path, place1)
+                dir_ = self.__get_direction(target, path, source)
                 print "DIR", dir_
                 route_descr.append(
                     {"motion": {
                         "area": "the corridor",
                         "direction": dir_,
-                        "distance": "at the end of" if end else "along",
                         "theme": "you",
-                        "source": self.__get_name(place1)
+                        "source": self.__get_name(source)
                     }}
                 )
+                if not self.__is_interface(source):
+                    route_descr[-1]["motion"]["distance"] = "at the end of" if source["end"] else "along"
+                if idx == len(route_list)-1:
+                    route_descr.append(
+                        {"being_located": {
+                            "location": "at the end of the corridor" if end else ("along the corridor on the " + self.__get_side(target, path, source)),
+                            "theme": self.__get_name(target),
+                        }}
+                    )
+                    if cl is not None:
+                        route_descr[-1]["being_located"]["place"] = cl[0] + (" of the " if self.__requires_article(cl[2]) else " of ") + cl[1]
             else:
-                cl = self.get_closest_landmark(place2, path)
-                print "OPS", cl
-                if self.__is_interface(place2):
+                if cl is not None and self.__is_interface(target):
                     route_descr.append(
                         {"taking": {
-                            "agent": "user",
-                            "source": cl[0] + (" of the " if self.__requires_article(cl[2]) else " of ") + cl[1],  # TODO: Check if name or object to add article
-                            "theme": self.__get_name(place2)
+                            "agent": "you",
+                            "source": cl[0] + (" of the " if self.__requires_article(cl[2]) else " of ") + cl[1],
+                            "theme": self.__get_name(target)
                         }}
                     )
             print "---"
-
         print route_descr
 
         r = ExampleRouteDescriptionGenerationResult(True)
-        self._ps.set_succeeded(r)
+        gh.set_succeeded(r)
+
+    def __get_side(self, place, corridor, pplace):
+        # TODO: This still can't work due to missing empty place connectors. Needs fixing once onto has been updated.
+        p = self.__get_with(place, corridor)
+        pp = self.__get_with(pplace, corridor)
+        if set(p) == set(pp): # same side
+            l = self.get_closest_landmark(pplace, corridor, place)
+            if l is not None:
+                return l[0]
+        else:
+            try:
+                l = self.get_closest_landmark(self.__get_on(pplace, "hasInFront")[0], corridor, place)
+                if l is not None:
+                    return l[0]
+            except IndexError:
+                return "confused (no infront)"
+        return "confused (side)"
 
     def __requires_article(self, place):
         return "toilets" in self.__get_type(place) or "signpost" in self.__get_type(place) or "atm" in self.__get_type(place)
@@ -90,19 +128,7 @@ class TestServer(object):
                 else:
                     return "confused (beginning)"
         else:
-            p = self.__get_with(place, corridor)
-            if set(p) == set(pp): # same side
-                l = self.get_closest_landmark(pplace, corridor, place)
-                if l is not None:
-                    return l[0]
-            else:
-                try:
-                    l = self.get_closest_landmark(self.__get_on(pplace, "hasInFront")[0], corridor, place)
-                    if l is not None:
-                        return l[0]
-                except IndexError:
-                    return "confused (no infront)"
-            return "confused (side)"
+            return self.__get_side(place, corridor, pplace)
 
     def __is_at_edge_of_corridor(self, place, corridor):
         r = self.__get_with(place, corridor)
@@ -115,7 +141,7 @@ class TestServer(object):
             except:
                 pass
 
-        (LEFT, RIGHT) = ("hastAtLeft", "hasAtRight")
+        (LEFT, RIGHT) = ("hasAtLeft", "hasAtRight")
         left = [x for x in self.__get_on(place, LEFT) if self.__get_with(x, path)]
         right = [x for x in self.__get_on(place, RIGHT) if self.__get_with(x, path)]
 
@@ -229,6 +255,14 @@ class TestServer(object):
                 rospy.sleep(1.)
             else:
                 return s(req)
+
+    def close_ontology(self):
+        return self.call_service(
+            "/ontologenius/actions",
+            OntologeniusService,
+            OntologeniusServiceRequest(action="close", param="")
+        )
+
 
 if __name__ == "__main__":
     rospy.init_node("route_description_generation")

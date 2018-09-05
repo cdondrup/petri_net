@@ -26,6 +26,7 @@ class TestServer(object):
         self._ps.start()
 
     def execute_cb(self, goal):
+        self.close_ontology()
         self.cache = {}
         print goal
         print "started"
@@ -229,6 +230,14 @@ class TestServer(object):
                 rospy.sleep(1.)
             else:
                 return s(req)
+
+    def close_ontology(self):
+        return self.call_service(
+            "/ontologenius/actions",
+            OntologeniusService,
+            OntologeniusServiceRequest(action="close", param="")
+        )
+
 
 if __name__ == "__main__":
     rospy.init_node("route_generation")
