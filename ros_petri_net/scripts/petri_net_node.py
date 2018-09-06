@@ -79,6 +79,7 @@ class PetriNetNode(object):
         return PNAction(
             ad["type"](name, params),
             recovery=Recovery(
+                during=During(failed=Recovery.FAIL),
                 before=b,
                 after=a
             )
