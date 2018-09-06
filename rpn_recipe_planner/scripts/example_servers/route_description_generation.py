@@ -85,8 +85,9 @@ class TestServer(object):
                     )
             print "---"
         print route_descr
+        qr = not self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value
 
-        r = ExampleRouteDescriptionGenerationResult(True)
+        r = ExampleRouteDescriptionGenerationResult(qr)
         gh.set_succeeded(r)
 
     def __get_side(self, place, corridor, pplace):

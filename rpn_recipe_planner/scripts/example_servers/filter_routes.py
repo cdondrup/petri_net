@@ -29,22 +29,30 @@ class TestServer(object):
 
     def execute(self, gh, goal):
         print self._ps.get_goal_id(gh), "Goal", goal
-        # self._ps.update_kb(meta_info=json.dumps({"status": "verbalisation.robot_move"}), type=RPNSimpleActionServer.UPDATE_REMOTE, attr="USER", value="")
         res = FilterRoutesResult()
         res.route = None
+        confirmed_constraints = []
         for route in deepcopy(goal.route_array):
             good = True
             for l in route.route:
                 for c in deepcopy(goal.route_constraints):
-                    print c, l
+                    print "---"
+                    print c
+                    print l
                     if c in l.type:
-                        print "QUERY"
-                        qr = self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "clarification.route_constraint"}), type=RPNActionServer.QUERY_REMOTE, attr=l.name)
-                        print self._ps.get_goal_id(gh), qr
-                        if json.loads(qr.value):
+                        if c in confirmed_constraints:
+                            r = False
+                        else:
+                            print "QUERY"
+                            qr = self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "clarification.route_constraint"}), type=RPNActionServer.QUERY_REMOTE, attr=l.name)
+                            print self._ps.get_goal_id(gh), qr
+                            r = json.loads(qr.value)
+                        if r:
                             del goal.route_constraints[goal.route_constraints.index(c)]
                         else:
                             del goal.route_array[goal.route_array.index(route)]
+                            if c not in confirmed_constraints:
+                                confirmed_constraints.append(c)
                             good = False
                             break
                 if not good:
@@ -54,14 +62,18 @@ class TestServer(object):
                 res.route = route.route
                 break
 
-        if res.route is None:
-            res.route = goal.route_array[-1].route
-
-        print self._ps.get_goal_id(gh), type(res.route)
-        res.route_array = goal.route_array
-        res.route_constraints = goal.route_constraints
-        print self._ps.get_goal_id(gh), "Res", res
-        gh.set_succeeded(res)
+        try:
+            if res.route is None:
+                res.route = goal.route_array[-1].route
+        except IndexError:
+            self._ps.update_kb(gh=gh, meta_info=json.dumps({"status": "failed"}), type=RPNActionServer.UPDATE_REMOTE, attr="USER", value="")
+            gh.set_aborted()
+        else:
+            print self._ps.get_goal_id(gh), type(res.route)
+            res.route_array = goal.route_array
+            res.route_constraints = goal.route_constraints
+            print self._ps.get_goal_id(gh), "Res", res
+            gh.set_succeeded(res)
 
 
 if __name__ == "__main__":
