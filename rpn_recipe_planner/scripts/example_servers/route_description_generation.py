@@ -60,11 +60,13 @@ class TestServer(object):
                         "area": "the corridor",
                         "direction": dir_,
                         "theme": "you",
-                        "source": self.__get_name(source)
+                        "source": ("the " if self.__requires_article(source) else "") + self.__get_name(source)
                     }}
                 )
                 if not self.__is_interface(source):
                     route_descr[-1]["motion"]["distance"] = "at the end of" if source["end"] else "along"
+                else:
+                    route_descr[-1]["motion"]["distance"] = ""
                 if idx == len(route_list)-1:
                     route_descr.append(
                         {"being_located": {
@@ -74,18 +76,21 @@ class TestServer(object):
                     )
                     if cl is not None:
                         route_descr[-1]["being_located"]["place"] = cl[0] + (" of the " if self.__requires_article(cl[2]) else " of ") + cl[1]
+                    else:
+                        route_descr[-1]["being_located"]["place"] = ""
             else:
                 if cl is not None and self.__is_interface(target):
                     route_descr.append(
                         {"taking": {
                             "agent": "you",
                             "source": cl[0] + (" of the " if self.__requires_article(cl[2]) else " of ") + cl[1],
-                            "theme": self.__get_name(target)
+                            "theme": ("the " if self.__requires_article(target) else "") + self.__get_name(target)
                         }}
                     )
             print "---"
         print route_descr
-        qr = not self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value
+        qr = not json.loads(self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value)
+        print "QR", qr, type(qr)
 
         r = ExampleRouteDescriptionGenerationResult(qr)
         gh.set_succeeded(r)
@@ -108,7 +113,7 @@ class TestServer(object):
         return "confused (side)"
 
     def __requires_article(self, place):
-        return "toilets" in self.__get_type(place) or "signpost" in self.__get_type(place) or "atm" in self.__get_type(place)
+        return "toilets" in self.__get_type(place) or "signpost" in self.__get_type(place) or "atm" in self.__get_type(place) or self.__is_interface(place) or "pathIntersection" in self.__get_type(place)
 
     def __get_direction(self, place, corridor, pplace):
         pp = self.__get_with(pplace, corridor)

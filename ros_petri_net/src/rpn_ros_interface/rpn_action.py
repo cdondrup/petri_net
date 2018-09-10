@@ -62,6 +62,7 @@ class RPNAtomicAction(ROSAtomicAction):
                 tmp[slot] = kb.query(slot)
             for slot, value in tmp.items():
                 setattr(goal, slot, type(getattr(goal, slot))(value))
+            print "GOAL", goal
             self.client.wait_for_server()
             self.gh = self.client.send_goal(goal, transition_cb=trans_cb)
             srv_basename = "/"+self.gh.comm_state_machine.action_goal.goal_id.id.replace('/','').replace('-','_').replace('.','_')
