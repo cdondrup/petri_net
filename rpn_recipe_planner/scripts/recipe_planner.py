@@ -81,12 +81,17 @@ class Server(object):
 
     def trans_cb(self, gh):
         print self.services
-        if gh.get_goal_status() in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED):
+        status = gh.get_goal_status()
+        print "STATUS", status
+        if status in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED):
             net_id = gh.comm_state_machine.action_goal.goal.net_id
             try:
                 for s in self.services[net_id]:
                     s.shutdown()
-                self.goal_handles[net_id].set_succeeded()
+                if status == GoalStatus.SUCCEEDED:
+                    self.goal_handles[net_id].set_succeeded()
+                else:
+                    self.goal_handles[net_id].set_aborted()
                 del self.services[net_id]
                 del self.goal_handles[net_id]
                 del self.rpn[net_id]

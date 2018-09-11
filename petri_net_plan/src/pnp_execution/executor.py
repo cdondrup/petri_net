@@ -14,7 +14,8 @@ class Executor(object):
         self.nets[net.name] = {
             "net": net,
             "marking": marking,
-            "thread": None
+            "thread": None,
+            "status": ""
         }
         return net.name
 
@@ -29,6 +30,10 @@ class Executor(object):
 
     def execute_net_and_wait(self, net_id, timeout=None):
         self.wait_for_net(self.execute_net(net_id), timeout)
+        return self.get_status(net_id)
+
+    def get_status(self, net_id):
+        return self.nets[net_id]["status"]
 
     def __run(self, net_id):
         net = self.nets[net_id]["net"]
@@ -62,8 +67,10 @@ class Executor(object):
             monitor_threads = self.monitor_atomic_actions(marking, net.places)
         if net.is_goal(marking):
             rospy.loginfo("Finished '{}' successfully.".format(net_id))
+            self.nets[net_id]["status"] = "succeeded"
         elif net.is_fail(marking):
             rospy.loginfo("Finished '{}' unsuccessfully.".format(net_id))
+            self.nets[net_id]["status"] = "failed"
 
     def check_num_tokens(self, marking, d_minus):
         trans = np.zeros(d_minus.shape[0], dtype=int)

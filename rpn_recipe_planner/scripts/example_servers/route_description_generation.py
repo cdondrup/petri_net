@@ -64,7 +64,10 @@ class TestServer(object):
                     }}
                 )
                 if not self.__is_interface(source):
-                    route_descr[-1]["motion"]["distance"] = "at the end of" if source["end"] else "along"
+                    try:
+                        route_descr[-1]["motion"]["distance"] = "at the end of" if source["end"] else "along"
+                    except KeyError:
+                        route_descr[-1]["motion"]["distance"] = "along"
                 else:
                     route_descr[-1]["motion"]["distance"] = "along"
                 if idx == len(route_list)-1:
@@ -89,7 +92,7 @@ class TestServer(object):
                     )
             print "---"
         print route_descr
-        qr = not json.loads(self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value)
+        qr = json.loads(self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value)
         print "QR", qr, type(qr)
 
         r = ExampleRouteDescriptionGenerationResult(qr)

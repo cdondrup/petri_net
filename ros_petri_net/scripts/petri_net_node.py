@@ -44,8 +44,11 @@ class PetriNetNode(object):
         Thread(target=self.execute_net, args=(gh, net, marking)).start()
 
     def execute_net(self, gh, net, marking):
-        self.exe.execute_net_and_wait(self.exe.add_net(net, marking))
-        gh.set_succeeded()
+        status = self.exe.execute_net_and_wait(self.exe.add_net(net, marking))
+        if status == "succeeded":
+            gh.set_succeeded()
+        else:
+            gh.set_aborted()
 
     def __create_op(self, mutable, classes):
         if isinstance(mutable, list):
