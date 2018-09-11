@@ -66,7 +66,7 @@ class TestServer(object):
                 if not self.__is_interface(source):
                     route_descr[-1]["motion"]["distance"] = "at the end of" if source["end"] else "along"
                 else:
-                    route_descr[-1]["motion"]["distance"] = ""
+                    route_descr[-1]["motion"]["distance"] = "along"
                 if idx == len(route_list)-1:
                     route_descr.append(
                         {"being_located": {
