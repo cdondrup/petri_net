@@ -9,6 +9,7 @@ import json
 import numpy as np
 from pprint import pprint
 from threading import Thread
+import sys
 
 
 class TestServer(object):
@@ -82,7 +83,7 @@ class TestServer(object):
                     else:
                         route_descr[-1]["being_located"]["place"] = ""
             else:
-                if cl is not None and self.__is_interface(target):
+                if cl is not None: # and self.__is_interface(target):
                     route_descr.append(
                         {"taking": {
                             "agent": "you",
@@ -98,27 +99,39 @@ class TestServer(object):
         r = ExampleRouteDescriptionGenerationResult(qr)
         gh.set_succeeded(r)
 
+    def __who_am_i(self):
+        return sys._getframe(1).f_code.co_name
+
     def __get_side(self, place, corridor, pplace):
+        print self.__who_am_i()
         # TODO: This still can't work due to missing empty place connectors. Needs fixing once onto has been updated.
         p = self.__get_with(place, corridor)
         pp = self.__get_with(pplace, corridor)
         if set(p) == set(pp): # same side
             l = self.get_closest_landmark(pplace, corridor, place)
+            print "same side", l
             if l is not None:
                 return l[0]
         else:
             try:
                 l = self.get_closest_landmark(self.__get_on(pplace, "hasInFront")[0], corridor, place)
+                print "other side", l
                 if l is not None:
                     return l[0]
+                else:
+                    end = self.__is_at_edge_of_corridor(pplace, corridor)
+                    if end:
+                        return "left" if (end == -1 and "isAtLeftOfPath" in p) or (end == 1 and "isAtisAtRightOfPath" in p) else "right"
             except IndexError:
                 return "confused (no infront)"
-        return "confused (side)"
+        return "straight"
 
     def __requires_article(self, place):
+        print self.__who_am_i()
         return "toilets" in self.__get_type(place) or "signpost" in self.__get_type(place) or "atm" in self.__get_type(place) or self.__is_interface(place) or "pathIntersection" in self.__get_type(place)
 
     def __get_direction(self, place, corridor, pplace):
+        print self.__who_am_i()
         pp = self.__get_with(pplace, corridor)
         end = self.__is_at_edge_of_corridor(place, corridor)
         if end:
@@ -140,10 +153,12 @@ class TestServer(object):
             return self.__get_side(place, corridor, pplace)
 
     def __is_at_edge_of_corridor(self, place, corridor):
+        print self.__who_am_i()
         r = self.__get_with(place, corridor)
         return -1 if "isAtEndEdgeOfPath" in r else 1 if "isAtBeginEdgeOfPath" in r else 0
 
     def get_closest_landmark(self, place, path, specific_place=None):
+        print self.__who_am_i()
         if specific_place is not None:
             try:
                 specific_place = specific_place["id"]
@@ -161,23 +176,26 @@ class TestServer(object):
             if left:
                 if self.__is_landmark(left[0]):
                     if specific_place is None or left[0] == specific_place:
-                        return "right", self.__get_name(left[0]), left[0]
+                        return "left", self.__get_name(left[0]), left[0]
                 left = self.__get_on(left[0], LEFT)
             if right:
                 if self.__is_landmark(right[0]):
                     if specific_place is None or right[0] == specific_place:
-                        return "left", self.__get_name(right[0]), right[0]
+                        return "right", self.__get_name(right[0]), right[0]
                 right = self.__get_on(right[0], RIGHT)
 
         return None
 
     def __get_on(self, attr, relation, select=None):
-         return self.__get_info("getOn", attr, relation, select)
+        print self.__who_am_i()
+        return self.__get_info("getOn", attr, relation, select)
 
     def __get_with(self, attr1, attr2):
+        print self.__who_am_i()
         return self.__get_info("getWith", attr1, attr2)
 
     def __get_info(self, action, attr1, attr2=None, select=None):
+        print self.__who_am_i()
         try:
             attr1 = attr1["id"]
         except:
@@ -201,12 +219,14 @@ class TestServer(object):
         return res
 
     def __get_type(self, p):
+        print self.__who_am_i()
         try:
             return p["type"]
         except:
             return self.__get_info("getUp", p)
 
     def __get_name(self, p):
+        print self.__who_am_i()
         try:
             name = p["name"]
         except:
@@ -216,21 +236,27 @@ class TestServer(object):
         return name
 
     def __is_landmark(self, place):
+        print self.__who_am_i()
         return self.__is_shop(place) or "toilets" in self.__get_type(place) or "signpost" in self.__get_type(place)
 
     def __is_corridor(self, path):
+        print self.__who_am_i()
         return "corridor" in self.__get_type(path)
 
     def __is_openspace(self, path):
+        print self.__who_am_i()
         return "openspace" in self.__get_type(path)
 
     def __is_shop(self, place):
+        print self.__who_am_i()
         return "shop" in self.__get_type(place)
 
     def __is_intersection(self, place):
+        print self.__who_am_i()
         return "pathIntersection" in self.__get_type(place)
 
     def __is_interface(self, place):
+        print self.__who_am_i()
         return "interface" in self.__get_type(place)
 
     def preempt_cb(self, *args):

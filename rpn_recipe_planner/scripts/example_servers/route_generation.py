@@ -11,7 +11,7 @@ import numpy as np
 from pprint import pprint
 
 
-START_LOCATION = "robot_infodesk"
+START_LOCATION = "pepper_infodesk"
 
 class TestServer(object):
     def __init__(self, name):

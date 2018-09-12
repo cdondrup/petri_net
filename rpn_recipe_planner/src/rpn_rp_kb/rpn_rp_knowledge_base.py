@@ -33,7 +33,7 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
             r = self.call_ontology(t, "getName", e)
             if r:
                 # l[i] = r[0].title()
-                l[i] = r[0]
+                l[i] = r[0].lower()
         return l
 
     def ontology_query(self, param, onto_type="individual", onto_action="find"):
