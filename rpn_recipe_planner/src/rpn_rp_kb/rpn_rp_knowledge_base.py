@@ -36,7 +36,7 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
                 l[i] = r[0].lower()
         return l
 
-    def ontology_query(self, param, onto_type="individual", onto_action="find"):
+    def ontology_query(self, param, onto_type="individual", onto_action="find", use_name=False):
         t_individual = "individual"
         t_class = "class"
         types = (t_individual, t_class)
@@ -48,7 +48,9 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
 
         param = param.lower()
 
-        r = self.get_names(onto_type, self.call_ontology(onto_type, onto_action, param))
+        r = self.call_ontology(onto_type, onto_action, param)
+        if use_name:
+            r = self.get_names(onto_type, r)
         if len(r) == 1:
             return r[0]
         return r

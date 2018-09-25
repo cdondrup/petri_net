@@ -10,7 +10,11 @@ task_route_descr:
                 LocalUpdate: 
                     - "place_frame"
                     - RemoteQuery:
-                        - RemoteQuery: [LocalQuery: "place_frame", {onto_action: "getType"}]
+                        - RemoteQuery: 
+                            - RemoteQuery: 
+                                - LocalQuery: "place_frame"
+                                - {onto_type: "class", onto_action: "find"}
+                            - {onto_action: "getType", use_name: true}
                         - {"status": "disambiguation"}
         - route_generation: {}
         - while:

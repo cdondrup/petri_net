@@ -14,6 +14,7 @@ import sys
 
 class TestServer(object):
     def __init__(self, name):
+        self.test = rospy.get_param("~test", False)
         self._ps = RPNActionServer(
             name,
             ExampleRouteDescriptionGenerationAction,
@@ -56,19 +57,17 @@ class TestServer(object):
                 print "END", end
                 dir_ = self.__get_direction(target, path, source)
                 print "DIR", dir_
-                route_descr.append(
-                    {"motion": {
-                        "area": "the corridor",
-                        "direction": dir_,
-                        "theme": "you",
-                        "source": ("the " if self.__requires_article(source) else "") + self.__get_name(source)
-                    }}
-                )
+                route_descr.append(self.create_motion(
+                        area="the corridor",
+                        direction=dir_,
+                        source=source
+                ))
                 if not self.__is_interface(source):
-                    try:
-                        route_descr[-1]["motion"]["distance"] = "at the end of" if source["end"] else "along"
-                    except KeyError:
-                        route_descr[-1]["motion"]["distance"] = "along"
+                    route_descr[-1]["motion"]["distance"] = "until the end of" if end else "along"
+                    # try:
+                        # route_descr[-1]["motion"]["distance"] = "at the end of" if source["end"] else "along"
+                    # except KeyError:
+                        # route_descr[-1]["motion"]["distance"] = "along"
                 else:
                     route_descr[-1]["motion"]["distance"] = "along"
                 if idx == len(route_list)-1:
@@ -79,32 +78,57 @@ class TestServer(object):
                         }}
                     )
                     if cl is not None:
-                        route_descr[-1]["being_located"]["place"] = cl[0] + (" of the " if self.__requires_article(cl[2]) else " of ") + cl[1]
+                        route_descr[-1]["being_located"]["place"] = cl[0] + " of " + self.add_article(cl[2])
                     else:
                         route_descr[-1]["being_located"]["place"] = ""
             else:
                 if cl is not None: # and self.__is_interface(target):
-                    route_descr.append(
-                        {"taking": {
-                            "agent": "you",
-                            "source": cl[0] + (" of the " if self.__requires_article(cl[2]) else " of ") + cl[1],
-                            "theme": ("the " if self.__requires_article(target) else "") + self.__get_name(target)
-                        }}
-                    )
+                    if idx == len(route_list)-1:
+                        route_descr.append(
+                            {"being_located": {
+                                "location": "in " + self.__get_name(path),
+                                "theme": self.__get_name(target),
+                            }}
+                        )
+                        if cl is not None:
+                            route_descr[-1]["being_located"]["place"] = cl[0] + " of " + self.add_article(cl[2])
+                        else:
+                            route_descr[-1]["being_located"]["place"] = ""
+                    else:
+                        route_descr.append(
+                            {"taking": {
+                                "agent": "you",
+                                "source": cl[0] + " of " + self.add_article(cl[2]),
+                                "theme": self.add_article(target)
+                            }}
+                        )
             print "---"
         print route_descr
-        qr = json.loads(self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value)
-        print "QR", qr, type(qr)
-
-        r = ExampleRouteDescriptionGenerationResult(qr)
+        if not self.test:
+            qr = json.loads(self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value)
+            print "QR", qr, type(qr)
+            r = ExampleRouteDescriptionGenerationResult(qr)
+        else:
+            r = ExampleRouteDescriptionGenerationResult()
         gh.set_succeeded(r)
 
     def __who_am_i(self):
         return sys._getframe(1).f_code.co_name
 
+    def create_motion(self, area, direction, source, theme="you"):
+        return {"motion": {
+            "area": area,
+            "direction": direction,
+            "theme": theme,
+            "source": self.add_article(source)
+        }}
+
+
+    def add_article(self, place):
+        return ("the " if self.__requires_article(place) else "") + (self.__get_name(place) if not self.__is_intersection(place) else "intersection")
+
     def __get_side(self, place, corridor, pplace):
         print self.__who_am_i()
-        # TODO: This still can't work due to missing empty place connectors. Needs fixing once onto has been updated.
         p = self.__get_with(place, corridor)
         pp = self.__get_with(pplace, corridor)
         if set(p) == set(pp): # same side
@@ -132,6 +156,7 @@ class TestServer(object):
 
     def __get_direction(self, place, corridor, pplace):
         print self.__who_am_i()
+        p = self.__get_with(place, corridor)
         pp = self.__get_with(pplace, corridor)
         end = self.__is_at_edge_of_corridor(place, corridor)
         if end:
@@ -141,16 +166,32 @@ class TestServer(object):
                 elif "isAtLeftOfPath" in pp:
                     return "left"
                 else:
-                    return "confused (end)"
+                    return "straight"
             else:
                 if "isAtRightOfPath" in pp:
                     return "left"
                 elif "isAtLeftOfPath" in pp:
                     return "right"
                 else:
-                    return "confused (beginning)"
+                    return "straight"
         else:
-            return self.__get_side(place, corridor, pplace)
+            if set(p) == set(pp): # same side
+                l = self.get_closest_landmark(pplace, corridor, place)
+                print "same side", l
+                if l is not None:
+                    return l[0]
+            else:
+                try:
+                    l = self.get_closest_landmark(self.__get_on(pplace, "hasInFront")[0], corridor, place)
+                    print "other side", l
+                    if l is not None:
+                        return "left" if l[0] == "right" else "right"
+                    else:
+                        if end:
+                            return "left" if (end == -1 and "isAtLeftOfPath" in p) or (end == 1 and "isAtisAtRightOfPath" in p) else "right"
+                except IndexError:
+                    return "confused (no infront)"
+            return "straight"
 
     def __is_at_edge_of_corridor(self, place, corridor):
         print self.__who_am_i()
