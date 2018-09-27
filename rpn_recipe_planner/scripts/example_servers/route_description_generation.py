@@ -105,8 +105,19 @@ class TestServer(object):
             print "---"
         print route_descr
         if not self.test:
-            qr = json.loads(self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value)
-            print "QR", qr, type(qr)
+            while True:
+                qr = json.loads(self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value)
+                print "QR", qr, type(qr)
+                if not qr:
+                    print "Ask if repeat"
+                    qr = json.loads(self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "clarification.route_repeat"}), type=RPNActionServer.QUERY_REMOTE, attr='').value)
+                    if not qr:
+                        self._ps.update_kb(gh=gh, meta_info=json.dumps({"status": "verbalisation.ask_human"}), type=RPNActionServer.UPDATE_REMOTE, value='', attr="USER")
+                        qr = True
+                        break
+                else:
+                    break
+
             r = ExampleRouteDescriptionGenerationResult(qr)
         else:
             r = ExampleRouteDescriptionGenerationResult()
@@ -125,7 +136,8 @@ class TestServer(object):
 
 
     def add_article(self, place):
-        return ("the " if self.__requires_article(place) else "") + (self.__get_name(place) if not self.__is_intersection(place) else "intersection")
+        # return ("the " if self.__requires_article(place) else "") + (self.__get_name(place) if not self.__is_intersection(place) else "intersection")
+        return "the " + self.__get_name(place)
 
     def __get_side(self, place, corridor, pplace):
         print self.__who_am_i()
@@ -145,7 +157,7 @@ class TestServer(object):
                 else:
                     end = self.__is_at_edge_of_corridor(pplace, corridor)
                     if end:
-                        return "left" if (end == -1 and "isAtLeftOfPath" in p) or (end == 1 and "isAtisAtRightOfPath" in p) else "right"
+                        return "right" if (end == -1 and "isAtLeftOfPath" in p) or (end == 1 and "isAtisAtRightOfPath" in p) else "left"
             except IndexError:
                 return "confused (no infront)"
         return "straight"

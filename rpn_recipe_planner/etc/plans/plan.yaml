@@ -21,5 +21,5 @@ task_route_descr:
             condition: {Comparison: ["ne", [LocalQuery: "route_success", true]]}
             actions:
                 - filter_routes: {}
-                - kb_operation: {operation: {RemoteUpdate: ["USER", "", {"status": "verbalisation.robot_move"}]}}
+                #- kb_operation: {operation: {RemoteUpdate: ["USER", "", {"status": "verbalisation.robot_move"}]}}
                 - route_description_generation: {}

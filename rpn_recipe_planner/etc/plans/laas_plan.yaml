@@ -1,0 +1,8 @@
+task_route_descr:
+    initial_knowledge:
+        route_constraints:
+            - "stair"
+            - "escalator"
+            - "elevator"
+    plan:
+        - rpn_supervision_server: {}

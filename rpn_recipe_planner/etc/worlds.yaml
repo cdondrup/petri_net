@@ -2,3 +2,7 @@ mummer:
     domain: domains/domain.yaml
     recipes:
         - plans/plan.yaml
+laas:
+    domain: domains/laas_domain.yaml
+    recipes:
+        - plans/laas_plan.yaml
