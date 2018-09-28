@@ -5,10 +5,12 @@ import rospy
 from rpn_action_servers.rpn_action_server import RPNActionServer
 from rpn_recipe_planner_msgs.msg import SupervisionServerAction, SupervisionServerResult
 from guiding_as_msgs.msg import Task
-from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryResponse, RPInform, RPInformResponse
+from rpn_recipe_planner_msgs.srv import SuperQuery, SuperQueryResponse, SuperInform, SuperInformResponse
 from dialogue_arbiter.msg import DialogueArbiterActionResult
 from threading import Thread
 from collections import OrderedDict
+from guiding_as.msg import taskActionResult
+import json
 
 
 class TestServer(object):
@@ -21,12 +23,13 @@ class TestServer(object):
         )
         self.threads = OrderedDict({})
         self.pub = rospy.Publisher("/supervisor/new_goal", Task, queue_size=10)
-        self.sub = rospy.Subscriber("/new_task_route_descr/result", DialogueArbiterActionResult, self.result_cb)
-        self.srv = rospy.Service("~inform", RPInform, lambda x: self.srv_cb(x, "inform"))
-        self.srv = rospy.Service("~query", RPQuery, lambda x: self.srv_cb(x, "query"))
+        self.sub = rospy.Subscriber("/guiding_task/result", taskActionResult, self.result_cb)
+        self.srv = rospy.Service("~inform", SuperInform, lambda x: self.srv_cb(x, "inform"))
+        self.srv = rospy.Service("~query", SuperQuery, lambda x: self.srv_cb(x, "query"))
         self._ps.start()
 
     def result_cb(self, msg):
+        print "MSG", msg
         gh = self.threads.items()[-1][0]
         gh.set_succeeded()
         print self.threads
@@ -50,11 +53,13 @@ class TestServer(object):
     def srv_cb(self, req, type):
         gh = self.threads.items()[-1][0]
         if type == "inform":
+            print type, req
             self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.UPDATE_REMOTE, value=json.dumps(req.return_value), attr="USER")
-            return RPInformResponse()
+            return SuperInformResponse()
         else:
             r = self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(req.return_value)).value
-            return RPQueryResponse(r)
+            print type, req
+            return SuperQueryResponse(r)
 
 
 if __name__ == "__main__":
