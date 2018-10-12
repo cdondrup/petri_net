@@ -6,3 +6,8 @@ laas:
     domain: domains/laas_domain.yaml
     recipes:
         - plans/laas_plan.yaml
+engage:
+    domain: domains/engage.yaml
+    recipes:
+        - plans/engage.yaml
+        - plans/disengage.yaml

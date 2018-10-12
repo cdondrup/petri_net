@@ -1,0 +1,4 @@
+disengage:
+    initial_knowledge: {}
+    plan:
+        - terminate_interaction: {}
