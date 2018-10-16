@@ -1,7 +1,7 @@
 import rospy
 import roslib
 import rostopic
-from actionlib import ActionClient
+from actionlib import ActionClient, CommState
 from actionlib_msgs.msg import GoalStatus
 from threading import Thread, Event
 from pnp_kb.knowledgebase import KnowledgeBase
@@ -39,8 +39,9 @@ class RPNAtomicAction(ROSAtomicAction):
             server_finished = Event()
 
             def trans_cb(gh):
-                print "{}({}): changed state to: {}".format(self.name, ', '.join(self.params), gh.get_goal_status())
-                if gh.get_goal_status() in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED):
+                state = gh.get_comm_state()
+                print "{}({}): changed state to: {}".format(self.name, ', '.join(self.params), state)
+                if state == CommState.DONE:
                     server_finished.set()
 
             def query_cb(req):
