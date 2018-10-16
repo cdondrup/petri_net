@@ -12,7 +12,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
     def query(self, variable, meta_info=None):
         if meta_info is not None:
             print "+++ Warning! Meta info field is ignored for local queries. +++"
-        print "--- QUERY ---", variable, getattr(self, variable)
+        # print "--- QUERY ---", variable, getattr(self, variable)
 
         return getattr(self, variable)
 
@@ -20,7 +20,7 @@ class KnowledgeBase(AbstractKnowledgeBase):
         if meta_info is not None:
             print "+++ Warning! Meta info field is ignored for local updates. +++"
         setattr(self, variable, value)
-        print "--- UPDATE ---", variable, getattr(self, variable)
+        # print "--- UPDATE ---", variable, getattr(self, variable)
 
     def __setattr__(self, name, value):
         with self.lock:
