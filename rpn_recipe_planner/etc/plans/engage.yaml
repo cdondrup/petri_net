@@ -1,4 +1,7 @@
 engage:
+    server:
+        module: "actionlib"
+        class:  "ActionServer"
     initial_knowledge: {}
     plan:
         - engage_human: {}

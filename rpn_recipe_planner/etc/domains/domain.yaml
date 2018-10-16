@@ -63,4 +63,12 @@ actions:
         <<: *kb_action
         params:
             - "route"
+    engage_human:
+        <<: *ros_action
+        params:
+            - "person_frame"
+    terminate_interaction:
+        <<: *ros_action
+        params:
+            - "person_frame"
 

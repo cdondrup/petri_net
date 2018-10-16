@@ -11,6 +11,7 @@ from ros_petri_net_msgs.msg import RPNAction, RPNGoal
 from dialogue_arbiter.msg import DialogueArbiterAction
 import json
 import yaml
+import importlib
 
 
 class RecipePlanner(object):
@@ -30,7 +31,7 @@ class RecipePlanner(object):
             self.recipes.update(r)
         print self.domain
         print self.recipes
-        self.servers = {k: Server(k, self.domain, v, DAPluginServer if da_action else ActionServer) for k, v in self.recipes.items()}
+        self.servers = {k: Server(k, self.domain, v) for k, v in self.recipes.items()}
         print self.servers
         rospy.loginfo("Started '{}'.".format(name))
 
@@ -40,10 +41,11 @@ class RecipePlanner(object):
 
 
 class Server(object):
-    def __init__(self, name, domain, plan, server_type):
+    def __init__(self, name, domain, plan):
         self.name = name
         self.domain = domain
         self.plan = plan
+        server_type = getattr(importlib.import_module(plan["server"]["module"]), plan["server"]["class"])
         self.services = {}
         self.goal_handles = {}
         self.rpn = {}
