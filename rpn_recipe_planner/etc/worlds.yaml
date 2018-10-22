@@ -4,12 +4,13 @@ mummer:
         - plans/plan.yaml
         - plans/engage.yaml
         - plans/disengage.yaml
+        - plans/dance.yaml
+        - plans/photo.yaml
 laas:
     domain: domains/laas_domain.yaml
     recipes:
         - plans/laas_plan.yaml
-engage:
-    domain: domains/engage.yaml
-    recipes:
         - plans/engage.yaml
         - plans/disengage.yaml
+        - plans/dance.yaml
+        - plans/photo.yaml
