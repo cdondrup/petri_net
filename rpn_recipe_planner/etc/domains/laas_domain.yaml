@@ -35,4 +35,12 @@ actions:
         <<: *ros_action
         params:
             - "person_frame"
+    robot_dance:
+        <<: *ros_action
+        params:
+            -
+    robot_selfie:
+        <<: *ros_action
+        params:
+            -
 

@@ -29,9 +29,12 @@ class TestServer(object):
         self._ps.start()
 
     def result_cb(self, msg):
-        print "MSG", msg
+        print "RESULT MSG", msg
         gh = self.threads.items()[-1][0]
-        gh.set_succeeded()
+        if msg.result.success:
+            gh.set_succeeded()
+        else:
+            gh.set_aborted()
         print self.threads
         del self.threads[gh]
         print self.threads
@@ -46,7 +49,7 @@ class TestServer(object):
         self.threads[gh].start()
 
     def execute(self, gh, goal):
-        t = Task(place_frame=goal.place_frame, person_frame=goal.person_frame)
+        t = Task(place_frame=goal.place_frame, person_frame='human-0')
         print "sending message"
         self.pub.publish(t)
 
@@ -54,7 +57,7 @@ class TestServer(object):
         gh = self.threads.items()[-1][0]
         if type == "inform":
             print type, req
-            self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.UPDATE_REMOTE, value=json.dumps(req.return_value), attr="USER")
+            self._ps.update_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.UPDATE_REMOTE, value=json.dumps(req.return_value), attr="USER")
             return SuperInformResponse()
         else:
             r = self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(req.return_value)).value

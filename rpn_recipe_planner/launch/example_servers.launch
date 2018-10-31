@@ -1,0 +1,5 @@
+<launch>
+  <node name="filter_routes" pkg="rpn_recipe_planner" type="filter_routes.py" output="screen" respawn="true"/>
+  <node name="route_generation" pkg="rpn_recipe_planner" type="route_generation.py" output="screen" respawn="true"/>
+  <node name="route_description_generation" pkg="rpn_recipe_planner" type="route_description_generation.py" output="screen" respawn="true"/>
+</launch>
