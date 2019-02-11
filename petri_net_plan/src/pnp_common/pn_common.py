@@ -1,4 +1,3 @@
-import rospy
 from abc import ABCMeta, abstractmethod
 import uuid
 
@@ -15,14 +14,14 @@ class PNBaseObject(object):
         self.external_kb = external_kb
 
     def loginfo(self, text):
-        rospy.loginfo(self.name + ': ' + text)
+        print "INFO: {}: {}".format(self.name, text)
 
     def logwarn(self, text):
-        rospy.logwarn(self.name + ': ' + text)
+        print "INFO: {}: {}".format(self.name + ': ' + text)
 
     def logerr(self, text):
-        rospy.logerr(self.name + ': ' + text)
+        print "INFO: {}: {}".format(self.name + ': ' + text)
 
     def __str__(self):
-        return name
+        return self.name
 
