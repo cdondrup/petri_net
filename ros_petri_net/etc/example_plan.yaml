@@ -1,6 +1,5 @@
 instances: &instances
-    - "time"
-    - "value"
+    - 
 external_knowledge_base:
     module: "rpn_ros_interface.ros_external_knowledge_base"
     class:  "ROSExternalKnowledgeBase"
@@ -46,13 +45,22 @@ actions:
 initial_knowledge:
     value: 3
 plan:
-    - while: 
-        condition: {Comparison: ["gt", [Query: "value", 2]]}
-        actions:
-            - dummy_server: {}
-            - kb_operation:
-                operation: {LocalUpdate: ["value", {Operation: ["sub", [Query: "value", 1]]}]}
-                result: "value"
+    #- while: 
+        #condition: 
+            #Comparison: 
+                #- "gt"
+                #- [Query: "value", 2]
+        #actions:
+            #- dummy_server: {}
+            #- kb_operation:
+                #operation: 
+                    #LocalUpdate: 
+                        #- "value"
+                        #- Operation: 
+                            #- "sub"
+                            #- [Query: "value", 1]
+                #result: "value"
+    - dummy_server: {}
     - concurrent_actions:
         - wait: {}
         - wait: {}

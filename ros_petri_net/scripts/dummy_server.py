@@ -53,7 +53,7 @@ class WaitServer(object):
     def simple_execute(self, gh):
         goal = gh
         print "Setting spam to eggs"
-        self._as.update_kb(RPNActionServer.QUERY_LOCAL, "spam", "eggs")
+        self._as.update_kb(RPNActionServer.UPDATE_LOCAL, "spam", "eggs")
         print "Got this from KB:", self._as.query_kb(RPNActionServer.QUERY_ALL, "spam")
         print "Waiting for %s seconds" % goal.value
         end = rospy.Time.now().to_sec() + goal.value

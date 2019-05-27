@@ -75,6 +75,7 @@ find_package(catkin REQUIRED COMPONENTS
    ExampleRouteDescriptionGeneration.action
    FilterRoutes.action
    SupervisionServer.action
+   SimpleTest.action
  )
 
 ## Generate added messages and services with any dependencies listed here

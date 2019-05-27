@@ -71,6 +71,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    Dummy.action
    RPN.action
+   wait.action
  )
 
 ## Generate added messages and services with any dependencies listed here
