@@ -32,6 +32,9 @@ class TestServer(object):
         res = FilterRoutesResult()
         res.route = None
         confirmed_constraints = []
+        first = True
+        name = goal.route_array[0].route[-1].name
+        print "Goal location:", name
         for route in deepcopy(goal.route_array):
             good = True
             for l in route.route:
@@ -40,6 +43,15 @@ class TestServer(object):
                     print c
                     print l
                     if c in l.type:
+                        if first:
+                            self._ps.update_kb(
+                                gh=gh,
+                                meta_info=json.dumps({"status": "verbalisation.first_floor"}),
+                                type=RPNActionServer.UPDATE_REMOTE,
+                                value=name,
+                                attr="USER"
+                            )
+                            first  = False
                         if c in confirmed_constraints:
                             r = False
                         else:

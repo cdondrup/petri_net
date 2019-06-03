@@ -10,6 +10,10 @@ from copy import deepcopy
 
 
 class ROSAtomicAction(AtomicAction):
+    def __init__(self, name, params=None):
+        super(ROSAtomicAction, self).__init__(name, params)
+        self.error = False
+
     def get_goal_type(self, action_name):
         topic_type = rostopic._get_topic_type("/%s/goal" % action_name)[0]
         # remove "Action" string from goal type
@@ -24,6 +28,7 @@ class ROSAtomicAction(AtomicAction):
 
     def run(self, kb, external_kb):
         with self.__mutex__:
+            self.error = False
             server_finished = Event()
 
             def trans_cb(gh):
@@ -41,20 +46,30 @@ class ROSAtomicAction(AtomicAction):
             tmp = deepcopy(self.params)  # Prevent to save the current state of non-fixed params
             for slot in set(goal.__slots__) - set(tmp.keys()):
                 tmp[slot] = kb.query(slot)
+            print tmp
             for slot, value in tmp.items():
-                setattr(goal, slot, type(getattr(goal, slot))(value))
+                # setattr(goal, slot, type(getattr(goal, slot))(value))
+                setattr(goal, slot, value)
+            print goal
             self.client.wait_for_server()
-            self.gh = self.client.send_goal(goal, transition_cb=trans_cb)
-            server_finished.wait()
-            result = self.gh.get_result()
-            if result != None and result:
-                for slot in result.__slots__:
-                    res = getattr(result,slot)
-                    kb.update(slot, res)
+            try:
+                self.gh = self.client.send_goal(goal, transition_cb=trans_cb)
+            except rospy.ROSSerializationException as e:
+                print "+++ Error:", e
+                self.error = True
+            else:
+                server_finished.wait()
+                result = self.gh.get_result()
+                if result != None and result:
+                    for slot in result.__slots__:
+                        res = getattr(result,slot)
+                        kb.update(slot, res)
 
     def get_state(self):
         if self.__mutex__.acquire(False):
             try:
+                if self.error:
+                    return GoalStatus.LOST
                 return self.gh.get_goal_status()
             except:
                 return -1

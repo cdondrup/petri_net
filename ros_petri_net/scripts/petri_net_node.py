@@ -99,19 +99,24 @@ class PetriNetNode(object):
 
     def __parse_plan(self, cp, net, gen, plan, action_definitions):
         for action in plan:
-            if "while" in action:
-                loop = action["while"]
-                acts = []
-                for a in loop["actions"]:
-                    acts.append(self.__create_action(a, action_definitions))
-                cond = BooleanAssertion(loop["condition"], True)
-                cp, net = gen.add_while_loop(net, cp, acts, cond)
-            elif "concurrent_actions" in action:
-                a = self.__create_concurrent_actions(action, action_definitions)
-                cp, net = gen.add_concurrent_actions(net, cp, a)
-            else:
-                a = self.__create_action(action, action_definitions)
-                cp, net = gen.add_action(net, cp, a)
+            try:
+                if "while" in action:
+                    loop = action["while"]
+                    acts = []
+                    for a in loop["actions"]:
+                        acts.append(self.__create_action(a, action_definitions))
+                    cond = BooleanAssertion(loop["condition"], True)
+                    cp, net = gen.add_while_loop(net, cp, acts, cond)
+                elif "concurrent_actions" in action:
+                    a = self.__create_concurrent_actions(action, action_definitions)
+                    cp, net = gen.add_concurrent_actions(net, cp, a)
+                else:
+                    a = self.__create_action(action, action_definitions)
+                    cp, net = gen.add_action(net, cp, a)
+            except TypeError as e:
+                print action
+                print "This does not seem to be an action."
+                raise e
 
         return cp, net
 
