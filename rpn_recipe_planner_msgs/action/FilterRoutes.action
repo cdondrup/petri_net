@@ -3,5 +3,5 @@ SemanticRoute[] route_array
 ---
 string[] route_constraints
 SemanticRoute[] route_array
-SemanticRouteLocation[] route
+SemanticRoute route
 ---

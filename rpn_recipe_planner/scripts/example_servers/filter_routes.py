@@ -71,7 +71,7 @@ class TestServer(object):
                     break
 
             if good:
-                res.route = route.route
+                res.route = route
                 break
 
         try:

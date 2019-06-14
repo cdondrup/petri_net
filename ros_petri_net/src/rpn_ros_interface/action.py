@@ -7,6 +7,8 @@ from threading import Thread, Event
 from pnp_kb.knowledgebase import KnowledgeBase
 from pnp_actions.atomic_action import AtomicAction
 from copy import deepcopy
+from StringIO import StringIO
+from genpy import SerializationError
 
 
 class ROSAtomicAction(AtomicAction):
@@ -28,42 +30,59 @@ class ROSAtomicAction(AtomicAction):
 
     def run(self, kb, external_kb):
         with self.__mutex__:
-            self.error = False
             server_finished = Event()
 
             def trans_cb(gh):
                 print "{}({}): changed state to: {}".format(self.name, ', '.join(self.params), gh.get_goal_status())
                 if gh.get_goal_status() in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED):
-                    result = gh.get_result()
-                    if result != None and result:
-                        for slot in result.__slots__:
-                            res = getattr(result,slot)
-                            kb.update(slot, res)
                     server_finished.set()
 
-            self.client = ActionClient(self.name, self.get_action_type(self.name))
-            goal = self.get_goal_type(self.name)()
-            tmp = deepcopy(self.params)  # Prevent to save the current state of non-fixed params
-            for slot in set(goal.__slots__) - set(tmp.keys()):
-                tmp[slot] = kb.query(slot)
-            print tmp
-            for slot, value in tmp.items():
-                # setattr(goal, slot, type(getattr(goal, slot))(value))
-                setattr(goal, slot, value)
-            print goal
-            self.client.wait_for_server()
+            action_type = self.get_action_type(self.name)
+            goal_type = self.get_goal_type(self.name)
             try:
-                self.gh = self.client.send_goal(goal, transition_cb=trans_cb)
-            except rospy.ROSSerializationException as e:
-                print "+++ Error:", e
-                self.error = True
+                goal = self.create_goal(goal_type=goal_type, params=self.params, kb=kb)
+            except SerializationError as e:
+                pass
             else:
+                print goal
+                self.client = ActionClient(self.name, action_type)
+                self.client.wait_for_server()
+                self.gh = self.client.send_goal(goal, transition_cb=trans_cb)
                 server_finished.wait()
-                result = self.gh.get_result()
-                if result != None and result:
-                    for slot in result.__slots__:
-                        res = getattr(result,slot)
-                        kb.update(slot, res)
+                self.get_result(kb)
+
+    def get_result(self, kb):
+        result = self.gh.get_result()
+        if result != None and result:
+            for slot in result.__slots__:
+                res = getattr(result,slot)
+                kb.update(slot, res)
+
+    def create_goal(self, goal_type, params, kb):
+        self.error = False
+        goal = goal_type()
+        tmp = deepcopy(params)  # Prevent to save the current state of non-fixed params
+        for slot in set(goal.__slots__) - set(tmp.keys()):
+            tmp[slot] = kb.query(slot)
+        for slot, value in tmp.items():
+            setattr(goal, slot, value)
+        try:
+            rospy.msg.serialize_message(b=StringIO(), msg=goal, seq=1)
+        except SerializationError as e:
+            print "{}({}): Goal serialisation failed, trying to forcefully cast parameters to match goal.".format(self.name, ', '.join(self.params))
+            goal = goal_type()
+            for slot, value in tmp.items():
+                setattr(goal, slot, type(getattr(goal, slot))(value))
+            try:
+                rospy.msg.serialize_message(b=StringIO(), msg=goal, seq=1)
+            except SerializationError as e:
+                print "{}({}): Goal serialisation failed after casting parameters: {}".format(self.name, ', '.join(self.params, e))
+                print "{}({}): Please, make sure that parameters with the same name also have the same type.".format(self.name, ', '.join(self.params))
+                print "{}({}): Automatic parameter population failed, aborting action.".format(self.name, ', '.join(self.params))
+                self.error = True
+                raise e
+
+        return goal
 
     def get_state(self):
         if self.__mutex__.acquire(False):
@@ -90,13 +109,13 @@ class ROSAtomicAction(AtomicAction):
     def failed(self):
         return self.get_state() in (GoalStatus.LOST, GoalStatus.ABORTED)
 
-    def get_result(self):
-        if self.g is not None:
-            with self.lock:
-                return self.g.get_result()
+    # def get_result(self):
+        # if self.g is not None:
+            # with self.lock:
+                # return self.g.get_result()
 
     def __str__(self):
-        return "Action({}): [{}]".format(
+        return "ROSAction({}): [{}]".format(
             self.name,
             ', '.join([str(k)+": "+str(v) for k,v in self.params.items()]) \
                 if self.params is not None else ""
