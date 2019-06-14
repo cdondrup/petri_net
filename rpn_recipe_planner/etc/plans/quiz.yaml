@@ -1,0 +1,25 @@
+task_quiz_game:
+    server:
+        module: "dialogue_arbiter_action.da_plugin_server"
+        class:  "DAPluginServer"
+    initial_knowledge:
+        score: "0"
+        running: true
+    plan:
+        - say:
+            operation:
+                RemoteUpdate: ["USER", "", {"status": "verbalisation.greeting"}]
+        - quiz_load_questions: {}
+        - say:
+            operation:
+                RemoteUpdate: ["USER", "", {"status": "verbalisation.explanation"}]
+        - while:
+            condition: {Comparison: ["eq", [LocalQuery: "running", true]]}
+            actions:
+                - quiz_run_question: {}
+                - say:
+                    operation:
+                        RemoteUpdate: ["USER", "", {"status": "verbalisation.move_on"}]
+        - say:
+            operation:
+                RemoteUpdate: ["USER", {LocalQuery: "score"}, {"status": "verbalisation.final"}]

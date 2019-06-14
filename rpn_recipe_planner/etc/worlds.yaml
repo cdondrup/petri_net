@@ -6,6 +6,7 @@ mummer:
         - plans/disengage.yaml
         - plans/dance.yaml
         - plans/photo.yaml
+        - plans/quiz.yaml
 laas:
     domain: domains/laas_domain.yaml
     recipes:

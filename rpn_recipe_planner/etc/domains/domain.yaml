@@ -27,6 +27,16 @@ actions:
         params:
             - "place_frame"
             - "human_frame"
+    say:
+        <<: *kb_action
+        params:
+            - "operation"
+    say_if_running:
+        <<: *kb_action
+        params:
+            - "operation"
+        preconditions:
+            - Comparison: ["eq", [LocalQuery: "running", true]]
     check_shop_instance:
         <<: *kb_action
         params:
@@ -79,3 +89,11 @@ actions:
         <<: *ros_action
         params:
             -
+    quiz_load_questions:
+        <<: *ros_action
+        params:
+            -
+    quiz_run_question:
+        <<: *rpn_action
+        params:
+            - "question_array"
