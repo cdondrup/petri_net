@@ -15,3 +15,4 @@ laas:
         - plans/disengage.yaml
         - plans/dance.yaml
         - plans/photo.yaml
+        - plans/quiz.yaml

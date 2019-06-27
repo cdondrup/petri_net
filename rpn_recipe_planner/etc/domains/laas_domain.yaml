@@ -43,4 +43,12 @@ actions:
         <<: *ros_action
         params:
             -
+    quiz_load_questions:
+        <<: *ros_action
+        params:
+            -
+    quiz_run_question:
+        <<: *rpn_action
+        params:
+            - "question_array"
 
