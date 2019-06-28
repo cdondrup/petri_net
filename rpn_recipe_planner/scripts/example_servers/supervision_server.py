@@ -11,6 +11,7 @@ from threading import Thread
 from collections import OrderedDict
 from guiding_as_msgs.msg import taskGoal, taskAction, taskActionResult
 from actionlib import SimpleActionClient
+from actionlib_msgs.msg import GoalStatus
 import json
 
 
@@ -52,18 +53,18 @@ class TestServer(object):
     def execute(self, gh, goal):
         sg = taskGoal(place_frame=goal.place_frame, person_frame=goal.person_frame)
         client = SimpleActionClient("/guiding_task", taskAction)
+        print "Waiting for super vision server"
         client.wait_for_server()
+        print "Found super vision server"
+        print "Sending goal and waiting for it to finish"
         client.send_goal_and_wait(sg)
-        result = client.get_result()
-        print "RESULT", result
-        if result is not None:
-            if result.success:
-                gh.set_succeeded()
-                return
+        print "Supervision server finished"
+        status = client.get_state()
+        print "STATUS", status
+        if status == GoalStatus.SUCCEEDED:
+            gh.set_succeeded()
+            return
         gh.set_aborted()
-        # t = Task(place_frame=goal.place_frame, person_frame='human-0')
-        # print "sending message"
-        # self.pub.publish(t)
 
     def srv_cb(self, req, type):
         gh = self.threads.items()[-1][0]

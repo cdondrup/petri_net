@@ -26,7 +26,7 @@ actions:
         <<: *rpn_action
         params:
             - "place_frame"
-            - "human_frame"
+            - "person_frame"
     engage_human:
         <<: *ros_action
         params:
