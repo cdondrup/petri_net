@@ -73,8 +73,8 @@ class TestServer(object):
             self._ps.update_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.UPDATE_REMOTE, value=json.dumps(req.return_value), attr="USER")
             return SuperInformResponse()
         else:
-            r = self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(req.return_value)).value
             print type, req
+            r = self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(req.return_value)).value
             return SuperQueryResponse(r)
 
 

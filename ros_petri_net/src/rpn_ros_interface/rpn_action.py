@@ -46,7 +46,11 @@ class RPNAtomicAction(ROSAtomicAction):
             else:
                 print goal
                 self.client = ActionClient(self.name, action_type)
-                self.client.wait_for_server()
+                wr = self.client.wait_for_server(timeout=rospy.Duration(1.0))
+                if not wr:
+                    self.error = True
+                    print "{}({}): failed, couldn't find a server with that name.".format(self.name, ', '.join(self.params))
+                    return
                 self.gh = self.client.send_goal(goal, transition_cb=trans_cb)
                 srv_basename = "/"+self.gh.comm_state_machine.action_goal.goal_id.id.replace('/','').replace('-','_').replace('.','_')
                 q_srv = rospy.Service(srv_basename+"/query", RPNQuery, query_cb)
