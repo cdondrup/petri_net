@@ -64,6 +64,9 @@ class TestServer(object):
         if status == GoalStatus.SUCCEEDED:
             gh.set_succeeded()
             return
+        elif status in (GoalStatus.PREEMPTED, GoalStatus.PREEMPTING):
+            gh.set_preempted()
+            return
         gh.set_aborted()
 
     def srv_cb(self, req, type):
