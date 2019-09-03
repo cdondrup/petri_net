@@ -63,18 +63,24 @@ class TestServer(object):
                         source=source
                 ))
                 if not self.__is_interface(source):
-                    route_descr[-1]["motion"]["distance"] = "until the end of" if end else "along"
+                    route_descr[-1]["motion"]["distance"] = "until the end of" if end else ""
+                    # route_descr[-1]["motion"]["distance"] = "until the end of" if end else "along"
                     # try:
                         # route_descr[-1]["motion"]["distance"] = "at the end of" if source["end"] else "along"
                     # except KeyError:
                         # route_descr[-1]["motion"]["distance"] = "along"
                 else:
-                    route_descr[-1]["motion"]["distance"] = "along"
+                    route_descr[-1]["motion"]["distance"] = ""
+                    # route_descr[-1]["motion"]["distance"] = "along"
+                if route_descr[-1]["motion"]["distance"] == "":
+                    route_descr[-1]["motion"]["area"] = ""
                 if idx == len(route_list)-1:
+                    locat = self.__get_name(target)
+                    locat = ("restaurant" if self.__is_restaurant(target) else "shop" if self.__is_shop(target) else "place") + " " + locat
                     route_descr.append(
                         {"being_located": {
-                            "location": "at the end of the corridor" if end else ("along the corridor on the " + self.__get_side(target, path, source)),
-                            "theme": self.__get_name(target),
+                            "location": "at the end of the corridor" if end else ("on the " + self.__get_side(target, path, source)),
+                            "theme": locat,
                         }}
                     )
                     if cl is not None:
@@ -84,10 +90,12 @@ class TestServer(object):
             else:
                 if cl is not None: # and self.__is_interface(target):
                     if idx == len(route_list)-1:
+                        locat = self.__get_name(target)
+                        locat = ("restaurant" if self.__is_restaurant(target) else "shop" if self.__is_shop(target) else "place") + " " + locat
                         route_descr.append(
                             {"being_located": {
                                 "location": "in " + self.__get_name(path),
-                                "theme": self.__get_name(target),
+                                "theme": locat,
                             }}
                         )
                         if cl is not None:
@@ -95,10 +103,11 @@ class TestServer(object):
                         else:
                             route_descr[-1]["being_located"]["place"] = ""
                     else:
+                        locat = ("restaurant" if self.__is_restaurant(cl[2]) else "shop" if self.__is_shop(cl[2]) else "place") + " " + cl[2]
                         route_descr.append(
                             {"taking": {
                                 "agent": "you",
-                                "source": cl[0] + " of " + self.add_article(cl[2]),
+                                "source": cl[0] + " of the " + locat,
                                 "theme": self.add_article(target)
                             }}
                         )
@@ -286,6 +295,7 @@ class TestServer(object):
             name = self.__get_info("getName", p)[0]
         if name.find("toilet") >= 0:
             return "toilet sign"
+        name = name if name != "intersection" else "junction"
         return name
 
     def __is_landmark(self, place):
@@ -303,6 +313,10 @@ class TestServer(object):
     def __is_shop(self, place):
         print self.__who_am_i()
         return "shop" in self.__get_type(place)
+
+    def __is_restaurant(self, place):
+        print self.__who_am_i()
+        return "restaurant" in self.__get_type(place)
 
     def __is_intersection(self, place):
         print self.__who_am_i()
