@@ -4,7 +4,7 @@
 import rospy
 from rpn_action_servers.rpn_action_server import RPNActionServer
 from rpn_recipe_planner_msgs.msg import SupervisionServerAction, SupervisionServerResult
-from guiding_as_msgs.msg import Task
+# from guiding_as_msgs.msg import Task
 from rpn_recipe_planner_msgs.srv import SuperQuery, SuperQueryResponse, SuperInform, SuperInformResponse
 from dialogue_arbiter.msg import DialogueArbiterActionResult
 from threading import Thread
