@@ -58,10 +58,14 @@ class Executor(object):
             print "[{}] Transitions fiering based on condition:".format(net_id), trans
             pprint(net.get_current_transitions(trans))
             if len(net.get_current_places(marking)[0]) == len(monitor_threads) or np.sum(trans) == 0:
+                print "[{}] Waiting for event.".format(net_id), action_finished
                 action_finished.wait()
+                print "[{}] Waited for event.".format(net_id), action_finished
+            else:
                 action_finished.clear()
-            print "[{}] Execute associated atomic_actions".format(net_id)
-            self.execute_atomic_actions(trans, net.transitions, action_finished)
+                print "[{}] Resetting event.".format(net_id), action_finished
+                print "[{}] Execute associated atomic_actions".format(net_id)
+                self.execute_atomic_actions(trans, net.transitions, action_finished)
             marking = np.matmul(trans, net.d) + marking
             print "[{}] Monitoring atomic_actions".format(net_id)
             monitor_threads = self.monitor_atomic_actions(marking, net.places)
@@ -94,6 +98,7 @@ class Executor(object):
         ts = []
         for p in np.array(places)[marking >= 1]:
             t = p.monitor_atomic_action()
+            print "MONITOR", t
             if t is not None:
                 ts.append(t)
         return ts

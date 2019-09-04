@@ -25,8 +25,11 @@ class AtomicAction(object):
         return
 
     def trigger_event(self):
+        print "I AM WAITING FOR", self.name
         self.__t.join()
+        print "IT IS DONE", self.name
         self.__event.set()
+        print "EVENT", self.__event, self.__event.is_set()
 
     def monitor(self):
         if self.__monitor_thread is None or not self.__monitor_thread.is_alive():

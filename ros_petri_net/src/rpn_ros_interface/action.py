@@ -34,7 +34,7 @@ class ROSAtomicAction(AtomicAction):
 
             def trans_cb(gh):
                 print "{}({}): changed state to: {}".format(self.name, ', '.join(self.params), gh.get_goal_status())
-                if gh.get_goal_status() in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED):
+                if gh.get_goal_status() in (GoalStatus.SUCCEEDED, GoalStatus.PREEMPTED, GoalStatus.ABORTED, GoalStatus.RECALLING, GoalStatus.LOST):
                     server_finished.set()
 
             action_type = self.get_action_type(self.name)
@@ -52,7 +52,9 @@ class ROSAtomicAction(AtomicAction):
                     print "{}({}): failed, couldn't find a server with that name.".format(self.name, ', '.join(self.params))
                     return
                 self.gh = self.client.send_goal(goal, transition_cb=trans_cb)
+                print "WAITING TO FINISH"
                 server_finished.wait()
+                print "FINISHED"
                 self.get_result(kb)
 
     def get_result(self, kb):

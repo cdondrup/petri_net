@@ -21,9 +21,13 @@ class RPNAtomicAction(ROSAtomicAction):
 
             def trans_cb(gh):
                 state = gh.get_comm_state()
-                print "{}({}): changed state to: {}".format(self.name, ', '.join(self.params), state)
+                goal_state = gh.get_goal_status()
+                print "{}({}): comm changed state to: {}".format(self.name, ', '.join(self.params), state)
+                print "{}({}): goal changed state to: {}".format(self.name, ', '.join(self.params), goal_state)
                 if state == CommState.DONE:
+                    print "SETTING server finished"
                     server_finished.set()
+                    print "SET server finished"
 
             def query_cb(req):
                 q_type = dict(zip((RPNQueryRequest.ALL, RPNQueryRequest.LOCAL, RPNQueryRequest.REMOTE), (Query, LocalQuery, RemoteQuery)))
@@ -55,7 +59,9 @@ class RPNAtomicAction(ROSAtomicAction):
                 srv_basename = "/"+self.gh.comm_state_machine.action_goal.goal_id.id.replace('/','').replace('-','_').replace('.','_')
                 q_srv = rospy.Service(srv_basename+"/query", RPNQuery, query_cb)
                 u_srv = rospy.Service(srv_basename+"/update", RPNUpdate, update_cb)
+                print "WAITING TO FINISH (RPN)"
                 server_finished.wait()
+                print "FINISHED (RPN)"
                 self.get_result(kb)
                 q_srv.shutdown()
                 u_srv.shutdown()
