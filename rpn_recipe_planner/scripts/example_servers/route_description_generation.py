@@ -5,10 +5,12 @@ from rpn_recipe_planner_msgs.msg import ExampleRouteDescriptionGenerationAction,
 from rpn_action_servers.rpn_action_server import RPNActionServer
 from semantic_route_description.srv import SemanticRoute, SemanticRouteRequest
 from ontologenius.srv import OntologeniusService, OntologeniusServiceRequest
+from dialogue_translator.srv import Translate, TranslateRequest
 import json
 import numpy as np
 from pprint import pprint
 from threading import Thread
+from Queue import Queue
 import sys
 
 
@@ -63,8 +65,8 @@ class TestServer(object):
                         source=source
                 ))
                 if not self.__is_interface(source):
-                    route_descr[-1]["motion"]["distance"] = "until the end of" if end else ""
-                    # route_descr[-1]["motion"]["distance"] = "until the end of" if end else "along"
+                    # route_descr[-1]["motion"]["distance"] = "to the end of" if end else ""
+                    route_descr[-1]["motion"]["distance"] = "to the end of" if end else "along"
                     # try:
                         # route_descr[-1]["motion"]["distance"] = "at the end of" if source["end"] else "along"
                     # except KeyError:
@@ -76,7 +78,7 @@ class TestServer(object):
                     route_descr[-1]["motion"]["area"] = ""
                 if idx == len(route_list)-1:
                     locat = self.__get_name(target)
-                    locat = ("restaurant" if self.__is_restaurant(target) else "shop" if self.__is_shop(target) else "place") + " " + locat
+                    locat = ("cafe" if self.__is_cafe(target) else "restaurant" if self.__is_restaurant(target) else "shop" if self.__is_shop(target) else "place") + " " + locat
                     route_descr.append(
                         {"being_located": {
                             "location": "at the end of the corridor" if end else ("on the " + self.__get_side(target, path, source)),
@@ -91,7 +93,7 @@ class TestServer(object):
                 if cl is not None: # and self.__is_interface(target):
                     if idx == len(route_list)-1:
                         locat = self.__get_name(target)
-                        locat = ("restaurant" if self.__is_restaurant(target) else "shop" if self.__is_shop(target) else "place") + " " + locat
+                        locat = ("cafe" if self.__is_cafe(target) else "restaurant" if self.__is_restaurant(target) else "shop" if self.__is_shop(target) else "place") + " " + locat
                         route_descr.append(
                             {"being_located": {
                                 "location": "in " + self.__get_name(path),
@@ -103,16 +105,30 @@ class TestServer(object):
                         else:
                             route_descr[-1]["being_located"]["place"] = ""
                     else:
-                        locat = ("restaurant" if self.__is_restaurant(cl[2]) else "shop" if self.__is_shop(cl[2]) else "place") + " " + cl[2]
+                        target = cl[2]
+                        locat = self.__get_name(target)
+                        locat = ("cafe" if self.__is_cafe(target) else "restaurant" if self.__is_restaurant(target) else "shop" if self.__is_shop(target) else "place") + " " + target
                         route_descr.append(
                             {"taking": {
                                 "agent": "you",
-                                "source": cl[0] + " of the " + locat,
+                                "source": " towards " + locat + ", and turn " + cl[0],
                                 "theme": self.add_article(target)
                             }}
                         )
             print "---"
         print route_descr
+        options = {
+            "taking": lambda **kwargs: "Walk first {source}",
+            # "motion": "At {source} {theme} walk {direction} {distance} {area}",
+            "motion": lambda **kwargs: "At this point, walk {direction} {distance} {area}" if kwargs["direction"] == "straight" else "At this point, turn {direction} and walk {distance} {area}",
+            "being_located": lambda **kwargs: "You will find the {theme} {location}"
+        }
+        route_descr = ". ".join([options[list(o.keys())[0]](**list(o.values())[0]).format(**list(o.values())[0]) for o in route_descr[:-1]]).strip() + (". " if len(route_descr) > 1 else "") + options[list(route_descr[-1].keys())[0]](**list(route_descr[-1].values())[0]).format(**list(route_descr[-1].values())[0])
+        route_descr = route_descr.replace("_", " ")
+        print "ROUTE", route_descr
+        route_descr = self.translate(route_descr, target_language="Finnish", source_language="English")
+        print "TRANS ROUTE", route_descr
+
         if not self.test:
             while True:
                 qr = json.loads(self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": "execute.route_description"}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(route_descr)).value)
@@ -170,6 +186,45 @@ class TestServer(object):
             except IndexError:
                 return "confused (no infront)"
         return "straight"
+
+    def translate(self, text, target_language, source_language):
+        print "TRANSLATE:", source_language, target_language, text
+        if target_language.lower() == source_language.lower():
+            return text
+        return self.call_service(
+            "/mummer_dialogue_translator/translate",
+            Translate,
+            TranslateRequest(
+                text=text,
+                target_language=target_language.lower(),
+                source_language=source_language.lower()
+            )
+        ).result
+
+    def call_service(self, srv_name, srv_type, req, blocking=True):
+
+        def call(srv_name, srv_type, req, queue):
+            while not rospy.is_shutdown():
+                try:
+                    s = rospy.ServiceProxy(
+                        srv_name,
+                        srv_type
+                    )
+                    s.wait_for_service(timeout=1.)
+                except rospy.ROSException:
+                    rospy.logwarn("Could not communicate with '%s' service. Retrying in 1 second." % srv_name)
+                    rospy.sleep(1.)
+                else:
+                    queue.put(s(req))
+                    return
+
+        queue = Queue()
+        t = Thread(target=call, args=(srv_name, srv_type, req, queue))
+        t.start()
+        if blocking:
+            t.join()
+            return queue.get()
+        return None
 
     def __requires_article(self, place):
         print self.__who_am_i()
@@ -296,6 +351,7 @@ class TestServer(object):
         if name.find("toilet") >= 0:
             return "toilet sign"
         name = name if name != "intersection" else "junction"
+        name = name.capitalize() if self.__is_shop(p) or self.__is_restaurant(p) else name
         return name
 
     def __is_landmark(self, place):
@@ -317,6 +373,10 @@ class TestServer(object):
     def __is_restaurant(self, place):
         print self.__who_am_i()
         return "restaurant" in self.__get_type(place)
+
+    def __is_cafe(self, place):
+        print self.__who_am_i()
+        return "cafe" in self.__get_type(place)
 
     def __is_intersection(self, place):
         print self.__who_am_i()
