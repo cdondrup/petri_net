@@ -65,7 +65,7 @@ class TestServer(object):
             gh.set_succeeded()
             return
         elif status in (GoalStatus.PREEMPTED, GoalStatus.PREEMPTING):
-            gh.set_preempted()
+            gh.set_canceled()
             return
         gh.set_aborted()
 

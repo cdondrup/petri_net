@@ -184,7 +184,7 @@ class TestServer(object):
                     if end:
                         return "right" if (end == -1 and "isAtLeftOfPath" in p) or (end == 1 and "isAtisAtRightOfPath" in p) else "left"
             except IndexError:
-                return "confused (no infront)"
+                return "left" if ("isAtBeginEdgeOfPath" in pp and "isAtLeftOfPath" in p) or ("isAtEndEdgeOfPath" in pp and "isAtisAtRightOfPath" in p) else "right"
         return "straight"
 
     def translate(self, text, target_language, source_language):
@@ -235,6 +235,9 @@ class TestServer(object):
         p = self.__get_with(place, corridor)
         pp = self.__get_with(pplace, corridor)
         end = self.__is_at_edge_of_corridor(place, corridor)
+        print "P", p
+        print "PP", pp
+        print "END", end
         if end:
             if end == -1:
                 if "isAtRightOfPath" in pp:
@@ -266,7 +269,7 @@ class TestServer(object):
                         if end:
                             return "left" if (end == -1 and "isAtLeftOfPath" in p) or (end == 1 and "isAtisAtRightOfPath" in p) else "right"
                 except IndexError:
-                    return "confused (no infront)"
+                    return "left" if ("isAtBeginEdgeOfPath" in pp and "isAtLeftOfPath" in p) or ("isAtEndEdgeOfPath" in pp and "isAtisAtRightOfPath" in p) else "right"
             return "straight"
 
     def __is_at_edge_of_corridor(self, place, corridor):
