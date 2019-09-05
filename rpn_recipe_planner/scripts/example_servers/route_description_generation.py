@@ -72,8 +72,8 @@ class TestServer(object):
                     # except KeyError:
                         # route_descr[-1]["motion"]["distance"] = "along"
                 else:
-                    route_descr[-1]["motion"]["distance"] = ""
-                    # route_descr[-1]["motion"]["distance"] = "along"
+                    # route_descr[-1]["motion"]["distance"] = ""
+                    route_descr[-1]["motion"]["distance"] = "along"
                 if route_descr[-1]["motion"]["distance"] == "":
                     route_descr[-1]["motion"]["area"] = ""
                 if idx == len(route_list)-1:
@@ -105,13 +105,18 @@ class TestServer(object):
                         else:
                             route_descr[-1]["being_located"]["place"] = ""
                     else:
+                        special = ""
+                        for x in target["type"]:
+                            if x in ("escalator", "stairs", "elevator"):
+                                special = target["name"]
+                                break
                         target = cl[2]
                         locat = self.__get_name(target)
-                        locat = ("cafe" if self.__is_cafe(target) else "restaurant" if self.__is_restaurant(target) else "shop" if self.__is_shop(target) else "place") + " " + target
+                        locat = ("cafe" if self.__is_cafe(target) else "restaurant" if self.__is_restaurant(target) else "shop" if self.__is_shop(target) else "place") + " " + locat
                         route_descr.append(
                             {"taking": {
                                 "agent": "you",
-                                "source": " towards " + locat + ", and turn " + cl[0],
+                                "source": " towards " + locat + ", and turn " + cl[0] if special == "" else " towards " + locat + " and use the " + special + " to the " + cl[0],
                                 "theme": self.add_article(target)
                             }}
                         )
@@ -121,7 +126,7 @@ class TestServer(object):
             "taking": lambda **kwargs: "Walk first {source}",
             # "motion": "At {source} {theme} walk {direction} {distance} {area}",
             "motion": lambda **kwargs: "At this point, walk {direction} {distance} {area}" if kwargs["direction"] == "straight" else "At this point, turn {direction} and walk {distance} {area}",
-            "being_located": lambda **kwargs: "You will find the {theme} {location}"
+            "being_located": lambda **kwargs: "You will find the {theme} which is {location}"
         }
         route_descr = ". ".join([options[list(o.keys())[0]](**list(o.values())[0]).format(**list(o.values())[0]) for o in route_descr[:-1]]).strip() + (". " if len(route_descr) > 1 else "") + options[list(route_descr[-1].keys())[0]](**list(route_descr[-1].values())[0]).format(**list(route_descr[-1].values())[0])
         route_descr = route_descr.replace("_", " ")
