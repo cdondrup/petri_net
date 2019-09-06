@@ -34,6 +34,22 @@ class RecipePlanner(object):
         self.servers = {k: Server(k, self.domain, v) for k, v in self.recipes.items()}
         print self.servers
         rospy.loginfo("Started '{}'.".format(name))
+        self.__is_alive()
+
+    def __is_alive(self):
+        from threading import Thread
+        from std_msgs.msg import String
+
+        pub = rospy.Publisher("~is_alive", String, queue_size=1)
+
+        def publish():
+            r = rospy.Rate(1)
+            while not rospy.is_shutdown():
+                pub.publish(str(rospy.Time.now().to_sec()))
+                r.sleep()
+
+        t = Thread(target=publish)
+        t.start()
 
     def load_yaml(self, filename):
         with open(filename, 'r') as f:
