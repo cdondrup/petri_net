@@ -63,7 +63,7 @@ class TestServer(object):
         goal = gh.get_goal()
         print goal
         self.threads[gh] = Thread(target=self.execute, args=(gh, goal))
-        print self.threads
+        # print self.threads
         self.threads[gh].start()
 
     def execute(self, gh, goal):
@@ -86,14 +86,17 @@ class TestServer(object):
         gh.set_aborted()
 
     def srv_cb(self, req, type):
+        print type, req
         gh = self.threads.items()[-1][0]
         if type == "inform":
-            print type, req
+            print "Sending inform to Alana"
             self._ps.update_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.UPDATE_REMOTE, value=json.dumps(req.return_value), attr="USER")
+            print "success"
             return SuperInformResponse()
         else:
-            print type, req
+            print "Sending query to Alana"
             r = self._ps.query_kb(gh=gh, meta_info=json.dumps({"status": req.status}), type=RPNActionServer.QUERY_REMOTE, attr=json.dumps(req.return_value)).value
+            print "success:", r
             return SuperQueryResponse(r)
 
 
