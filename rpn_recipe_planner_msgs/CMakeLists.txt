@@ -75,6 +75,8 @@ find_package(catkin REQUIRED COMPONENTS
    ExampleRouteDescriptionGeneration.action
    FilterRoutes.action
    SupervisionServer.action
+   SupervisionServerInform.action
+   SupervisionServerQuery.action
    SimpleTest.action
  )
 

@@ -2,16 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import rospy
+from actionlib import SimpleActionServer
 from rpn_action_servers.rpn_action_server import RPNActionServer
 from rpn_recipe_planner_msgs.msg import SupervisionServerAction, SupervisionServerResult
+from rpn_recipe_planner_msgs.msg import SupervisionServerInformAction, SupervisionServerInformResult
+from rpn_recipe_planner_msgs.msg import SupervisionServerQueryAction, SupervisionServerQueryResult
 # from guiding_as_msgs.msg import Task
-from rpn_recipe_planner_msgs.srv import SuperQuery, SuperQueryResponse, SuperInform, SuperInformResponse
+from rpn_recipe_planner_msgs.srv import SuperQuery, SuperQueryResponse, SuperQueryRequest, SuperInform, SuperInformResponse, SuperInformRequest
 from dialogue_arbiter.msg import DialogueArbiterActionResult
-from threading import Thread
+from threading import Thread, Event
 from collections import OrderedDict
 from guiding_as_msgs.msg import taskGoal, taskAction, taskActionResult
 from actionlib import SimpleActionClient
 from actionlib_msgs.msg import GoalStatus
+from queue import Queue
 import json
 
 
@@ -23,11 +27,17 @@ class TestServer(object):
             self.goal_cb,
             auto_start=False
         )
+
+        self.inform_srv = SimpleActionServer("~inform_srv", SupervisionServerInformAction, lambda x: self.server_cb(x, "inform"), auto_start=False)
+        self.query_srv = SimpleActionServer("~query_srv", SupervisionServerQueryAction, lambda x: self.server_cb(x, "query"), auto_start=False)
+
         self.threads = OrderedDict({})
         # self.pub = rospy.Publisher("/supervisor/new_goal", Task, queue_size=10)
         # self.sub = rospy.Subscriber("/guiding_task/result", taskActionResult, self.result_cb)
         self.srv = rospy.Service("~inform", SuperInform, lambda x: self.srv_cb(x, "inform"))
         self.srv = rospy.Service("~query", SuperQuery, lambda x: self.srv_cb(x, "query"))
+        self.inform_srv.start()
+        self.query_srv.start()
         self._ps.start()
         self.__is_alive()
 
@@ -85,8 +95,41 @@ class TestServer(object):
             return
         gh.set_aborted()
 
+    def server_cb(self, goal, type):
+        event = Event()
+        queue = Queue()
+
+        def call_service(req, type):
+            queue.put(self.srv_cb(req, type))
+
+        print "Received new {} goal:".format(type)
+        print goal
+        if type == "inform":
+            print "Called inform action server"
+            t = Thread(target=call_service, args=(SuperInformRequest(status=goal.status, return_value=goal.return_value), type))
+            t.start()
+            while not rospy.is_shutdown() and not self.inform_srv.is_preempt_requested() and t.is_alive():
+                rospy.sleep(0.1) # Ugly busy wait but don't know any better
+            if not self.inform_srv.is_preempt_requested() and self.inform_srv.is_active():
+                self.inform_srv.set_succeeded()
+            else:
+                self.query_srv.set_preempted()
+        else:
+            print "Called query action server"
+            t = Thread(target=call_service, args=(SuperQueryRequest(status=goal.status, return_value=goal.return_value), type))
+            t.start()
+            while not rospy.is_shutdown() and not self.query_srv.is_preempt_requested() and t.is_alive():
+                rospy.sleep(0.1) # Ugly busy wait but don't know any better
+            if not t.is_alive():
+                r = queue.get()
+            if not self.query_srv.is_preempt_requested() and self.query_srv.is_active():
+                self.query_srv.set_succeeded(r)
+            else:
+                self.query_srv.set_preempted()
+
     def srv_cb(self, req, type):
-        print type, req
+        print "Called {} service:".format(type)
+        print req
         gh = self.threads.items()[-1][0]
         if type == "inform":
             print "Sending inform to Alana"
