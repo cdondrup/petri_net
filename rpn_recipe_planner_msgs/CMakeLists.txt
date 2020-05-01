@@ -54,8 +54,6 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    StringArray.msg
-   SemanticRoute.msg
-   SemanticRouteLocation.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -71,13 +69,8 @@ find_package(catkin REQUIRED COMPONENTS
  add_action_files(
    FILES
    RPNRecipePlanner.action
-   ExampleRouteGeneration.action
-   ExampleRouteDescriptionGeneration.action
-   FilterRoutes.action
-   SupervisionServer.action
-   SupervisionServerInform.action
-   SupervisionServerQuery.action
    SimpleTest.action
+   RosServer.action
  )
 
 ## Generate added messages and services with any dependencies listed here

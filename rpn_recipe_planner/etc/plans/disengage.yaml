@@ -1,7 +1,0 @@
-task_goodbye:
-    server:
-        module: "dialogue_arbiter_action.da_plugin_server"
-        class:  "DAPluginServer"
-    initial_knowledge: {}
-    plan:
-        - terminate_interaction: {}

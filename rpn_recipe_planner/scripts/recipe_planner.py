@@ -79,7 +79,7 @@ class Server(object):
         gh.set_accepted()
         goal = gh.get_goal()
         print goal
-        if goal.params != '':
+        if goal.params != '':  # TODO: make work with generic parameters not just a json string
             params = json.loads(goal.params)
             for k in params.keys():
                 try:

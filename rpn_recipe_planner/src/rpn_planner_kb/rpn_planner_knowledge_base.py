@@ -1,9 +1,4 @@
 from pnp_kb.external_knowledge_base import ExternalKnowledgeBase
-import utils as ut
-from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryRequest
-from rpn_recipe_planner_msgs.srv import RPInform, RPInformRequest
-from ontologenius.srv import OntologeniusService, OntologeniusServiceRequest
-import json
 
 
 class RPKnowledgeBase(ExternalKnowledgeBase):
@@ -16,6 +11,7 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
         return a
 
     def update(self, variable, value, meta_info=None):
-        raise AttributeError("Updates are not supported at the moment.")
+        print "+++ UPDATE +++", variable, value
+        setattr(self, variable, value)
 
 

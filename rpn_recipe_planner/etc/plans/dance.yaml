@@ -1,7 +1,0 @@
-task_robot_dance:
-    server:
-        module: "dialogue_arbiter_action.da_plugin_server"
-        class:  "DAPluginServer"
-    initial_knowledge: {}
-    plan:
-        - robot_dance: {}

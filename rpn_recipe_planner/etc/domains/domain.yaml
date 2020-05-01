@@ -1,7 +1,7 @@
 instances: &instances
     - 
 external_knowledge_base:
-    module: "rpn_rp_kb.rpn_rp_knowledge_base"
+    module: "rpn_planner_kb.rpn_planner_knowledge_base"
     class:  "RPKnowledgeBase"
 action_types:
     BaseAction: &base_action
@@ -22,78 +22,24 @@ action_types:
             module: "pnp_actions.kb_action"
             class:  "KBAction"
 actions:
+    rpn_test_server:
+        <<: *rpn_action
+        params:
+            - "value"
+        preconditions:
+            and:
+                - Exists: [LocalQuery: "value"]
+        effects:
+            and:
+                Exists: [LocalQuery: "result"]
     test_server:
-        <<: *rpn_action
+        <<: *ros_action
         params:
-            - "place_frame"
-            - "human_frame"
-    say:
+          - "value"
+        preconditions:
+          and:
+              - Exists: [LocalQuery: "value"]
+    add_one:
         <<: *kb_action
         params:
             - "operation"
-    say_if_running:
-        <<: *kb_action
-        params:
-            - "operation"
-        preconditions:
-            - Comparison: ["eq", [LocalQuery: "running", true]]
-    check_shop_instance:
-        <<: *kb_action
-        params:
-            - "operation"
-        preconditions:
-            and:
-                - Comparison: ["contains", [RemoteQuery: ["place", {onto_type: "class", onto_action: "getDown"}], RemoteQuery: [LocalQuery: "place_frame", {onto_type: "class", onto_action: "find"}]]]
-        effects:
-            and:
-                - Comparison: ["contains", [RemoteQuery: ["shop", {onto_action: "getType"}], RemoteQuery: [LocalQuery: "place_frame", {onto_action: "find"}]]]
-    route_generation:
-        <<: *rpn_action
-        params:
-            - "place_frame"
-        preconditions:
-            and: 
-                Exists: [LocalQuery: "place_frame"]
-        effects:
-            and:
-                Exists: [LocalQuery: "route_array"]
-    route_description_generation:
-        <<: *rpn_action
-        params:
-            - "route"
-        preconditions:
-            and:
-                - Exists: [LocalQuery: "route"]
-    filter_routes:
-        <<: *rpn_action
-        params:
-            - "route_constraints"
-            - "route_array"
-    kb_operation:
-        <<: *kb_action
-        params:
-            - "route"
-    engage_human:
-        <<: *ros_action
-        params:
-            - "person_frame"
-    terminate_interaction:
-        <<: *ros_action
-        params:
-            - "person_frame"
-    robot_dance:
-        <<: *ros_action
-        params:
-            -
-    robot_selfie:
-        <<: *ros_action
-        params:
-            -
-    quiz_load_questions:
-        <<: *ros_action
-        params:
-            -
-    quiz_run_question:
-        <<: *rpn_action
-        params:
-            - "question_array"

@@ -1,0 +1,18 @@
+task_quiz_game:
+    server:
+        module: "actionlib"
+        class:  "SimpleActionServer"
+    action:
+        module: "rpn_recipe_planner_msgs.msg"
+        class: "RosServerAction"
+    initial_knowledge:
+        value: 5
+    plan:
+        - rpn_test_server: {}
+        - while:
+            condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}
+            actions:
+                - add_one:
+                    operation:
+                        LocalUpdate: ["value", {LocalQuery: "value"}+1, ""]
+        - test_server: {}
