@@ -349,4 +349,97 @@ finally, we have our KB action:
 
 From the name, we can alreaady imagine that it will take what ever is in `result` and save it to `value`. How it does that is defined in the plan (see below). We could define preconditions and effects for this as well but have chosen not to for the sake of space. It only has one parameter called `operation` which we will see below.
 
+**Plans**
 
+Now that we have defined all the actions we can use, we have to put them in some form of sequence. This plan could be produced by a proper planner but for now we will just hand craft it. The plan can be found [here](rpn_recipe_planner/etc/plans/example.yaml) and looks like this:
+
+```yaml
+example_plan:
+    server:
+        module: "actionlib"
+        class:  "ActionServer"
+    action:
+        module: "rpn_recipe_planner_msgs.msg"
+        class: "RosServerAction"
+    initial_knowledge:
+        value: 5
+    plan:
+        - rpn_test_server: {}
+        - while:
+            condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}
+            actions:
+                - test_server: {}
+                - result_to_value:
+                    operation:
+                        LocalUpdate: ["value", {LocalQuery: "result"}, ""]
+
+```
+
+The name of this plan is `example_plan` and will become important later on because this plan will be turned into a ROS action server for execution. The actual type of this server and the goal it takes are defined here:
+
+```yaml
+    server:
+        module: "actionlib"
+        class:  "ActionServer"
+    action:
+        module: "rpn_recipe_planner_msgs.msg"
+        class: "RosServerAction"
+```
+
+The server type is stright forward. The action file used looks like this:
+
+```yaml
+string id
+string params
+---
+---
+```
+
+The goal requires some form of `id` and `params`. The id is simply a unique string (use uuid4 for example) and the `params` is the json representation of a `dict`. This `dict` is used to provide the local KB with inital knowledge. So you can pass in values that you want to give your servers for execution. Sadly, for now, you have to use this goal. I am currently look into accepting generic goals but this is ongoing work.
+
+So once the plan has been parsed and turned into a Petri-Net, the framework will automaticall create a ROS Action Server with a goal of type `RosServerGoal`. When this server is started, the Petri-Net is executed.
+
+The statement
+
+```yaml
+    initial_knowledge:
+        value: 5
+```
+
+is yet another way to provide the local KB with inital data in addition to the `param` of the action goal mentioned above. This is to hardcode common knowledge. Here we say that this net should start with a `value=5`.
+
+The plan of the net requires some explanaition as well. It show cases the genral structure and how to use loops:
+
+```yaml
+    plan:
+        - rpn_test_server: {}
+        - while:
+            condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}
+            actions:
+                - test_server: {}
+                - result_to_value:
+                    operation:
+                        LocalUpdate: ["value", {LocalQuery: "result"}, ""]
+```
+
+All the actions in the list are executed sequentially. The is a way of executing them concurrently but this is not part of this tutorial. Just to give you a taste, it is as easy as just defining a list of actions called `concurrent_actions`. All the actions in that list will then be executed concurrently. That's the beauty of Petri-Nets. back to our example now, the first statement: `rpn_test_server: {}` simple means "start the action called `rpn_test_server` and don't give it any special parameters". The empty `{}` could be used to hard code special parameters. So if we wanted to ignore the local KB we could do something like this: `rpn_test_server: {value: 1}`. That would mean that our action uses `1` as the `value` instead of `5`. Since we don't define anything though it just uses the local KB so `value=5`. After this action has finished, the while loop is executed:
+
+```yaml
+        - while:
+            condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}
+            actions:
+                - test_server: {}
+                - result_to_value:
+                    operation:
+                        LocalUpdate: ["value", {LocalQuery: "result"}, ""]
+```
+
+A while loop defines a condition that has to be true in oder for the loop to start and is checked every iteration. Like a proper while loop. It also defines a sequence of actions which are executed in order. Our condition is `condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}` which translates to: "Check the local KB for `value` and if the result is not equal (`ne`) to 10, then return `true`". As long as this condition is true, we execute our two actions inside. The first action is `test_server: {}` which takes in a `value` adds 1 and returns the `result`. So on the firt iteration it gets `value=5` and returns `result=6` which automatically put into the local KB. The next action is our KB action:
+
+```yaml
+                - result_to_value:
+                    operation:
+                        LocalUpdate: ["value", {LocalQuery: "result"}, ""]
+```
+
+this action performed a local update: `LocalUpdate: ["value", {LocalQuery: "result"}, ""]`. This translates to: "Query the local KB for `result` and save the return value in the local KB as `value`". So it basically saves `result` to `value` -> `result=value`. Hence the next loop iteration `value=6` and I am sure you can see where this is going. So all we do here is basically counting from 5 to 10. I know, not very impressive when you think about it but this is just a place holder for whatever operation you would like to perform.
