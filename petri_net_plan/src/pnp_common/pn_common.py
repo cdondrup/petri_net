@@ -17,10 +17,10 @@ class PNBaseObject(object):
         print "INFO: {}: {}".format(self.name, text)
 
     def logwarn(self, text):
-        print "INFO: {}: {}".format(self.name + ': ' + text)
+        print "WARNING: {}: {}".format(self.name, text)
 
     def logerr(self, text):
-        print "INFO: {}: {}".format(self.name + ': ' + text)
+        print "ERROR: {}: {}".format(self.name, text)
 
     def __str__(self):
         return self.name

@@ -21,7 +21,7 @@ class AtomicAction(object):
         self.__t.start()
 
     @abstractmethod
-    def run(self, kb ,external_kb):
+    def run(self, kb, external_kb):
         return
 
     def trigger_event(self):

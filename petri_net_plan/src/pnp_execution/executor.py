@@ -55,7 +55,7 @@ class Executor(object):
             if np.sum(trans) == 0:
                 break
             trans = self.check_conditions(trans, net.transitions)
-            print "[{}] Transitions fiering based on condition:".format(net_id), trans
+            print "[{}] Transitions firing based on condition:".format(net_id), trans
             pprint(net.get_current_transitions(trans))
             if len(net.get_current_places(marking)[0]) == len(monitor_threads) or np.sum(trans) == 0:
                 print "[{}] Waiting for event.".format(net_id), action_finished
