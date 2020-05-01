@@ -6,15 +6,15 @@ Documentation can be found here: http://pnm.dondrup.net/
 
 The following descirbes a minimal example of how to use the Petri-Net framework. The benefits
 of this framework will only really become apparent when the examples becom a little
-more complex. For now, we will focus on the minal version of the system that shows some of its
+more complex. For now though, we will focus on the minimal version of the system that shows some of its
 functionality.
 
 ### Actions
 
-This example will show case three different action types that are commonly used.
+This example will showcase three different action types that are commonly used.
 
 **ROS Action Servers**
-The action used for both version of the ROS action server described here will be:
+The action used for both version of the ROS action server described here is the `SimpleTest.action`:
 
 ```
 # goal
@@ -27,7 +27,7 @@ int32 result
 ```
 
 So the action has an integer called `value` as a goal parameter and the result contains
-a int called `result`. There is no feedback. The message can be found [here](rpn_recipe_planner_msgs/action/SimpleTest.action).
+an int called `result`. There is no feedback. The message can be found [here](rpn_recipe_planner_msgs/action/SimpleTest.action).
 
 The simplest method of using the Petri-Net framework is by just using vanilla ROS ActionServer nodes. A simple example used here can be found 
 in the [simple_test.py](rpn_recipe_planner/scripts/example_servers/simple_test.py) and looks like this:
@@ -66,15 +66,15 @@ if __name__ == "__main__":
     rospy.spin()
 ```
 
-As you can see, the only thing this server does is taking in an int value using our `SimpleTest.action`, adding 1, and then returning the result in the 
+As you can see, the only thing this server does is taking in an int `value` using our `SimpleTest.action`, adding 1, and then returning the `result` in the 
 `SimpleTest.action`. This is just a place holder for whatever action you might require to be fulfilled. In the finished net, this server will be started
 and the net will wait until it is finished before continueing. It receeives input at start and produces output at the end. There is a second kind of server, 
 however, in case your action server needs to communicate with an external knowledgebase.
 
 **RPN Action Servers**
 
-RPN is short for ROS Petri-Net. These servers provide functionality for the server to communicate with the Petri-Net at run time. this is useful if, for example,
-you need to query an external knowledgebase such as an ontology or the user of an interactive system via dialogue. This global data base or exeternal knowledge 
+RPN is short for ROS Petri-Net. These servers provide functionality for the server to communicate with the Petri-Net at run time. This is useful if, for example,
+you need to query an external knowledgebase such as an ontology or the user of an interactive system via dialogue. This global data base or external knowledge 
 base is shared between all petri-nets and can therefore also be used to exchange information between different subsystems. More on this later.
 
 The [RPN server used here](rpn_recipe_planner/scripts/example_servers/test.py) uses the same action as the other server above and looks like this:
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
 As you can see, instead of using a ROS `ActionServer` like above, we are using a `RPNSimpleActionServer`.These inherit from the corresponding ROS version, i.e.
 `SimpleActionServer` and `ActionServer`, and offer some added funtionality. In principle, the server does nothing but take in the `value` and return the same 
-thing as the `result` or the `SimpleTest.action` shown above. In between it show cases the special functionality of RPN servers which is updating and querying
+thing as the `result` of the `SimpleTest.action` shown above. In between it showcases the special functionality of RPN servers which is updating and querying
 the knowledge bases. For this purpose the RPN Servers provide `update_kb(type, attr, value, meta_info)` and `query_kb(type, attr, meta_info)`. Using ROS
 services, these methods communicate with the both the local and global/external knowledge base. More on these later.
 
@@ -136,9 +136,8 @@ self._ps.update_kb(type=RPNSimpleActionServer.UPDATE_REMOTE, attr="my_value", va
 ```
 
 the `type` can be `UPDATE_` followed by either `REMOTE` (global KB), `LOCAL` (local KB), `ALL` (both KBs) which are constants provided by `RPNSimpleActionServer`.
-The `attr` is the name of the field your value should be stored in. The `value` is the value you want store. This has to be of type str which is why json
-is used here. The last argument (not shown here) is called `meta_info` and can be any kind of string. this can be used to pass along additional information
-specific to your external KB.
+The `attr` is the name of the field your value should be stored in, i.e. `my_value` in this case. The `value` is the data you want store. This has to be of type str which is why json
+is used here. The last and optional argument (not shown here) is called `meta_info` and can be any kind of string. This can be used to pass along additional information specific to your external KB.
 
 *Querying the KB* works similar to updating it.
 
@@ -151,8 +150,8 @@ object. Using the `value` field you can get a string representation of the resul
 
 **Knowledge Base Action**
 
-The thrid type of action possible and used here is the KB action. This action work directly on the knowledge base. So actually we wouldn't have needed the server
-described above to store out value in the external KB but we could have done that directly using a KB action. Why is this beneficial? Because we don't need to
+The thrid type of action possible and used here is the KB action. This action works directly on the knowledge base. So actually we wouldn't have needed the server
+described above to store our `my_value` in the external KB but we could have done that directly using a KB action. Why is this beneficial? Because we don't need to
 implement a dedicted ROS node for this but can define these directly in the domain and plan. This action will be explained in more detail later when we have 
 a look at the plan and domain files.
 
@@ -161,11 +160,11 @@ a look at the plan and domain files.
 Having talked about them a little already, it is time to introduce the concept of the local and global/external knowledge base. Sadly, the naming convention 
 hasn't been adhered to so the global KB is sometimes also called external. Both are the same thing though.
 
-*Local KB* this KB is meant to automatically save the results and populate the goals of action servers. So in our example the `value` that is put into the action goal whe  either of the servers above is started comes from the local KB. Once the servers are finished, the `result` is saved in the local KB.
-All this happens automaticall and the user doesn't need to concern themselves with that. This is meant to allow to pass information between different actions automatically. So if the goal parameter of an action server is called the same as the resul parameter of a different action server, then the information would be passed along automatically.
-A little example, imagine you have a server `A` and a server `B`. Server `A` produces a random integer and returns it in its result message as `rnd_int`. Now server `B` is supposed to check if this random integer is odd or even. in order to do that, the goal message of server `B` has a field called `rnd_int`. Since both the output of server `A` and the input of server `B` are called the same, the local KB will take care of saving the output from `A` and passing it to the goal of `B` when it is started. Hence, the user does not need to concern themselves with having to pass the value between the servers but only needs to make sure that both parameters are called the same.
+*Local KB* this KB is meant to automatically save the results and populate the goals of action servers. So in our example the `value` that is put into the action goal when either of the servers above is started comes from the local KB. Once the servers are finished, the `result` is saved in the local KB.
+All this happens automaticaly and the user doesn't need to concern themselves with that. This is meant to allow to pass information between different actions automaticaly. So if the goal parameter of an action server is called the same as the result parameter of a different action server, then the information would be passed along by the system.
+A little example, imagine you have a server `A` and a server `B`. Server `A` produces a random integer and returns it in its result message as `rnd_int`. Now server `B` is supposed to check if this random integer is odd or even. In order to do that, the goal message of server `B` has a field called `rnd_int`. Since both the output of server `A` and the input of server `B` are called the same, the local KB will take care of saving the output from `A` and passing it to the goal of `B` when it is started. Hence, the user does not need to concern themselves with having to pass the value between the servers but only needs to make sure that both parameters are called the same.
 
-This local KB only exists during the runtime of the perti-net it is associated with. It can be initilised with prior knowledge. More on this later.
+This local KB only exists during the runtime of the perti-net it is associated with. It can be initialised with prior knowledge. More on this later.
 
 *Global KB* The global or external KB can be used for project specific purposes such as communication with an ontology, a dialogue system, etc. It can also be used to pass values between different actions in different petri nets or between different execution cycles of the same petri net. In contrast to the local KB, the global KB lives for the entire runtime of the Petri-Net Server. So if data is supposed to be stored persistently between runs of single nets, this can be used.
 
@@ -190,7 +189,7 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
 
 ```
 
-It is kept as simple as possible by extending `pnp_kb.external_knowledge_base` which provides all the technical funsitonality for communication etc. The user only has to implement two methods: query and update. You can see an example implementation above that simple staroes any value that comes in in update as a memeber variable and then retrieves and returns it in the query method. The methods are called via the functionality of the RPN Action Servers described above and should be relatively self-explanatory.
+It is kept as simple as possible by extending `pnp_kb.external_knowledge_base` which provides all the technical functionality for communication etc. The user only has to implement two methods: `query` and `update`. You can see an example implementation above that simply stores any value that comes in in `update` as a member variable and then retrieves and returns it in the `query` method. The methods are called via the functionality of the RPN Action Servers described above and should be relatively self-explanatory.
 
 ### Petri-Net Definition
 
