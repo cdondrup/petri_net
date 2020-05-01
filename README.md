@@ -246,7 +246,7 @@ actions:
 
 ```
 
-Let's have a look at this YAML file in a bit more detail. The first staement about `instances` is depricated and not used anymore. It is there for legacy reasons and should just be draged along for now. The next part defines which extrenal KB to use:
+Let's have a look at this YAML file in a bit more detail. The first statement about `instances` is depricated and not used anymore. It is there for legacy reasons and should just be draged along for now. The next part defines which external KB to use:
 
 ```yaml
 external_knowledge_base:
@@ -256,8 +256,8 @@ external_knowledge_base:
 
 This links to the KB described above and should be self-explanatory.
 
-The next part describes the actions that can be used in this domain. These are not the actual actions that are described above but Petri-Net internal action definitions. These can be used in the Petri-Net and will then call either a ROS action server or a RPN action server. If ou would like to know more about atomic actions, please have a look at the documentation linked at the top of this file.
-The maine thing to notice here is they define the three key words `ros_action`, `rpn_action`, and `kb_action` that can be used to define what type of action you want to create.
+The next part describes the actions that can be used in this domain. These are not the actual actions that are described above but Petri-Net internal action definitions. These can be used in the Petri-Net and will then call either a ROS action server or a RPN action server. If you would like to know more about atomic actions, please have a look at the documentation linked at the top of this file.
+The main thing to notice here is they define the three key words `ros_action`, `rpn_action`, and `kb_action` that can be used to define what type of action you want to create.
 
 ```yaml
 action_types:
@@ -300,7 +300,7 @@ We tell the Petri-Net that this is a ROS action server using `<<: *ros_action`. 
           - "value"
 ```
 
-In reality, the params can be omitted completly and it would still work. It does, however, increase readability. Next follow optionl pre-conditions and effects. These are used to determine if the action can be executed (preconditions) and if it has to be executed/was successfully executed (effect). If the preconditions are not met, the net will fail as it cannot execute the action. If the effects are already true before the action has been started, the action will be skiped. If the effects are not true after the action has finished, the action will be executed again. These are standard behaviours that can be customised but this is a bit beyond the scope of this simple tutorial. The action here only defines preconditions:
+In reality, the params can be omitted completly and it would still work. It does, however, increase readability. Next follow optionl preconditions and effects. These are used to determine if the action can be executed (preconditions) and if it has to be executed/was successfully executed (effect). If the preconditions are not met, the net will fail as it cannot execute the action. If the effects are already true before the action has been started, the action will be skiped. If the effects are not true after the action has finished, the action will be executed again. These are standard behaviours that can be customised but this is a bit beyond the scope of this simple tutorial. The action here only defines preconditions:
 
 ```yaml
         preconditions:
@@ -308,7 +308,7 @@ In reality, the params can be omitted completly and it would still work. It does
               - Exists: [LocalQuery: "value"]
 ```
 
-Preconditions and effects, support all standard logical operations, i.e. and, or, not, and a range of comparisosns and checks such as the `Exists` used here. So before the action will be started, the Petri-Net will query the local KB and check if there is an entry called "value". This makes sure that we can fill the goal of our `SimpleTest.action` defined above.
+Preconditions and effects, support all standard logical operations, i.e. and, or, not, and a range of comparisons and checks such as the `Exists` used here. So before the action will be started, the Petri-Net will query the local KB and check if there is an entry called "value". This makes sure that we can fill the goal of our `SimpleTest.action` defined above.
 
 In additiona to our vaniall ROS action, we also have our RPN action that we defined above:
 
@@ -325,7 +325,7 @@ In additiona to our vaniall ROS action, we also have our RPN action that we defi
                 Exists: [LocalQuery: "result"]
 ```
 
-This is called `rpn_test_server` which must again be the same as the name of the ROS node it is supposed to represent. It is defined as an `<<: *rpn_action` but otherwise works exactly the same aas above. The main difference is that it also defines an effect to show how this works.
+This is called `rpn_test_server` which must again be the same as the name of the ROS node it is supposed to represent. It is defined as an `<<: *rpn_action` but otherwise works exactly the same as above. The main difference is that it also defines an effect to show how this works.
 
 ```yaml
         effects:
@@ -333,11 +333,11 @@ This is called `rpn_test_server` which must again be the same as the name of the
                 Exists: [LocalQuery: "result"]
 ```
 
-Effects work the same and support the same operations as preconditions. The main difference is that effects are checked before the start of an action and after the action finishes. So in this case if the field `result` already exists in our local KB before the action is started, then we can assume that the effect has already happened that, therefore, we do not need to run the action at all. If it does not exists yet, then the action is executed. If after the action finishes, the field `result` does still not exist in the local KB, the action is restarted in the hope that running it another time will work better. Again, this might not be the smartest contingency plan but these can be mnaually defined if necessary. More on this in a later tutorial.
+Effects work the same and support the same operations as preconditions. The main difference is that effects are checked before the start of an action and after the action finishes. So in this case if the field `result` already exists in our local KB before the action is started, then we can assume that the effect has already happened and, therefore, we do not need to run the action at all. If it does not exists yet, then the action is executed. If after the action finishes, the field `result` does still not exist in the local KB, the action is restarted in the hope that running it another time will work better. Again, this might not be the smartest contingency plan but these can be mnaually defined if necessary. More on this in a later tutorial.
 
-For our example, we know that the field `result` will exist after the action has been executed because our `SimpleTest.action` has this field and our implementation of the server returns a result. Btw. just because `SimpleTest.action` has a field called `result` does not mean that we will always have this entry in the local KB. If the server fails, the result will not be returned and therefore, the entry will not be made. hence, restarting the server might fix this.
+For our example, we know that the field `result` will exist after the action has been executed because our `SimpleTest.action` has this field and our implementation of the server returns a result. Btw. just because `SimpleTest.action` has a field called `result` does not mean that we will always have this entry in the local KB. If the server fails, the result will not be returned and therefore, the entry will not be made. Hence, restarting the server might fix this.
 
-finally, we have our KB action:
+Finally, we have our KB action:
 
 ```yaml
     result_to_value:
@@ -394,9 +394,9 @@ string params
 ---
 ```
 
-The goal requires some form of `id` and `params`. The id is simply a unique string (use uuid4 for example) and the `params` is the json representation of a `dict`. This `dict` is used to provide the local KB with inital knowledge. So you can pass in values that you want to give your servers for execution. Sadly, for now, you have to use this goal. I am currently look into accepting generic goals but this is ongoing work.
+The goal requires some form of `id` and `params`. The id is simply a unique string (use uuid4 for example) and the `params` is the json representation of a `dict`. This `dict` is used to provide the local KB with inital knowledge. So you can pass in values that you want to give your servers for execution. Sadly, for now, you have to use this goal type. I am currently looking into accepting generic goals but this is ongoing work.
 
-So once the plan has been parsed and turned into a Petri-Net, the framework will automaticall create a ROS Action Server with a goal of type `RosServerGoal`. When this server is started, the Petri-Net is executed.
+So once the plan has been parsed and turned into a Petri-Net, the framework will automaticaly create a ROS Action Server with a goal of type `RosServerGoal` called `example_plan`. When this server is started, the Petri-Net is executed.
 
 The statement
 
@@ -407,7 +407,7 @@ The statement
 
 is yet another way to provide the local KB with inital data in addition to the `param` of the action goal mentioned above. This is to hardcode common knowledge. Here we say that this net should start with a `value=5`.
 
-The plan of the net requires some explanaition as well. It show cases the genral structure and how to use loops:
+The plan of the net requires some explanation as well. It showcases the genral structure and how to use loops:
 
 ```yaml
     plan:
@@ -421,7 +421,7 @@ The plan of the net requires some explanaition as well. It show cases the genral
                         LocalUpdate: ["value", {LocalQuery: "result"}, ""]
 ```
 
-All the actions in the list are executed sequentially. The is a way of executing them concurrently but this is not part of this tutorial. Just to give you a taste, it is as easy as just defining a list of actions called `concurrent_actions`. All the actions in that list will then be executed concurrently. That's the beauty of Petri-Nets. back to our example now, the first statement: `rpn_test_server: {}` simple means "start the action called `rpn_test_server` and don't give it any special parameters". The empty `{}` could be used to hard code special parameters. So if we wanted to ignore the local KB we could do something like this: `rpn_test_server: {value: 1}`. That would mean that our action uses `1` as the `value` instead of `5`. Since we don't define anything though it just uses the local KB so `value=5`. After this action has finished, the while loop is executed:
+All the actions in the list are executed sequentially. There is a way of executing them concurrently but this is not part of this tutorial. Just to give you a taste, it is as easy as just defining a list of actions called `concurrent_actions`. All the actions in that list will then be executed concurrently. That's the beauty of Petri-Nets. Back to our example though, the first statement: `rpn_test_server: {}` simple means "start the action called `rpn_test_server` and don't give it any special parameters". The `{}` could be used to hard code special parameters. So if we wanted to ignore the local KB we could do something like this: `rpn_test_server: {value: 1}`. That would mean that our action uses `1` as the `value` instead of `5`. Since we don't define anything though it just uses the local KB so `value=5`. After this action has finished, the while loop is executed:
 
 ```yaml
         - while:
@@ -433,7 +433,7 @@ All the actions in the list are executed sequentially. The is a way of executing
                         LocalUpdate: ["value", {LocalQuery: "result"}, ""]
 ```
 
-A while loop defines a condition that has to be true in oder for the loop to start and is checked every iteration. Like a proper while loop. It also defines a sequence of actions which are executed in order. Our condition is `condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}` which translates to: "Check the local KB for `value` and if the result is not equal (`ne`) to 10, then return `true`". As long as this condition is true, we execute our two actions inside. The first action is `test_server: {}` which takes in a `value` adds 1 and returns the `result`. So on the firt iteration it gets `value=5` and returns `result=6` which automatically put into the local KB. The next action is our KB action:
+A while loop defines a condition that has to be true in oder for the loop to start and is checked every iteration. Like a proper while loop. It also defines a sequence of actions which are executed in order. Our condition is `condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}` which translates to: "Check the local KB for `value` and if the result is not equal (`ne`) to 10, then return `true`" (comparisons are taken directly from the [python operator package](https://docs.python.org/2.7/library/operator.html)). As long as this condition is true, we execute our two actions inside. The first action is `test_server: {}` which takes in a `value` adds 1 and returns the `result`. So on the firt iteration it gets `value=5` and returns `result=6` which is automatically put into the local KB. The next action is our KB action:
 
 ```yaml
                 - result_to_value:
@@ -441,11 +441,11 @@ A while loop defines a condition that has to be true in oder for the loop to sta
                         LocalUpdate: ["value", {LocalQuery: "result"}, ""]
 ```
 
-this action performed a local update: `LocalUpdate: ["value", {LocalQuery: "result"}, ""]`. This translates to: "Query the local KB for `result` and save the return value in the local KB as `value`". So it basically saves `result` to `value` -> `result=value`. Hence the next loop iteration `value=6` and I am sure you can see where this is going. So all we do here is basically counting from 5 to 10. I know, not very impressive when you think about it but this is just a place holder for whatever operation you would like to perform.
+This action performes a local update: `LocalUpdate: ["value", {LocalQuery: "result"}, ""]`. This translates to: "Query the local KB for `result` and save the return value in the local KB as `value`". So it basically saves `result` to `value` -> `result=value`. Hence the next loop iteration `value=6` and I am sure you can see where this is going. So all we do here is basically counting from 5 to 10. I know, not very impressive when you think about it but this is just a place holder for whatever operation you would like to perform.
 
 **Worlds**
 
-The is one final file missing, the `worlds.yaml` file found [here](rpn_recipe_planner/etc/worlds.yaml). This file simply tells the programme where to find the domain file and the plans:
+There is one final file missing, the `worlds.yaml` file found [here](rpn_recipe_planner/etc/worlds.yaml). This file simply tells the programme where to find the domain file and the plans:
 
 ```yaml
 example:
@@ -454,17 +454,17 @@ example:
         - plans/example.yaml
 ```
 
-Out world here is called `example` and it has exactly one plan or recipe as we call it here. Each world can have one domain file which defines all the possible actions in the world and several recipes or plans that can all be loaded at the same time. Each of these recipes will be turned into a separate ROS action server for execution. Here we only have one which our plane discussed above.
+Our world here is called `example` and it has exactly one plan or recipe as we call it here. Each world can have one domain file which defines all the possible actions in the world and several recipes or plans that can all be loaded at the same time. Each of these recipes will be turned into a separate ROS action server for execution. Here we only have one which is our plane discussed above.
 
 ### Petri-Net Execution
 
-Not the we have defined everything we need all we do is run things. First we need to start the petri-net execution framework:
+Now that we have defined everything we need all we do is run things. First we need to start the petri-net execution framework:
 
 ```
 roslaunch rpn_recipe_planner recipe_planner.launch world:=example
 ```
 
-The `world` parameter tells the framework which plans to load. Once we have done so, checking the rostopics tells us that the system has created our `example_plan` action server for us:
+The `world` parameter tells the framework which plans to load and should be an entry in the `worlds.yaml` file. Once we have done so, checking the rostopics tells us that the system has created our `example_plan` action server for us:
 
 ```
 /example_plan/cancel
@@ -474,14 +474,14 @@ The `world` parameter tells the framework which plans to load. Once we have done
 /example_plan/status
 ```
 
-Now all we need to do is start our two action server that we created in the beginning:
+Now all we need to do is start our two action servers that we created in the beginning:
 
 ```
 rosrun rpn_recipe_planner simple_test.py
 rosrun rpn_recipe_planner test.py
 ```
 
-Now everything is ready to run and we could just start the action server of our plan directly using:
+Now everything is ready to run and we can just start the action server of our plan directly using:
 
 ```
 $ rostopic pub /example_plan/goal rpn_recipe_planner_msgs/RosServerActionGoal "header:
@@ -500,6 +500,6 @@ goal:
   params: ''" -1
 ```
 
-The id here is set to `my_test_net`. This is just a name and can be whatever you like apart from the empty string as this name is used to create a host of topics and services for internal communication. The name has to be unique. A video of the execution can be found here: https://youtu.be/MouAW1H-CaQ.
+The `id` here is set to `my_test_net`. This is just a name and can be whatever you like apart from the empty string as this name is used to create a host of topics and services for internal communication. The name has to be unique. A video of the execution can be found here: https://youtu.be/MouAW1H-CaQ.
 
-The execution of is almost instantaneously the only thing that takes time is the very first action server as it has several sleep statements in it.
+The execution of the net is almost instantaneously the only thing that takes time is the very first action server as it has several sleep statements in it.
