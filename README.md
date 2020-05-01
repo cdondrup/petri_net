@@ -501,4 +501,6 @@ goal:
   params: ''" -1
 ```
 
-The id here is set to `my_test_net`. This is just a name and can be whatever you like apart from the empty string as this name is used to create a host of topics and services for internal communication. The name has to be unique.
+The id here is set to `my_test_net`. This is just a name and can be whatever you like apart from the empty string as this name is used to create a host of topics and services for internal communication. The name has to be unique. A video of the execution can be found here: https://youtu.be/MouAW1H-CaQ.
+
+The execution of is almost instantaneously the only thing that takes time is the very first action server as it has several sleep statements in it.
