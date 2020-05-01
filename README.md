@@ -246,3 +246,107 @@ actions:
             - "operation"
 
 ```
+
+Let's have a look at this YAML file in a bit more detail. The first staement about `instances` is depricated and not used anymore. It is there for legacy reasons and should just be draged along for now. The next part defines which extrenal KB to use:
+
+```yaml
+external_knowledge_base:
+    module: "rpn_planner_kb.rpn_planner_knowledge_base"
+    class:  "RPKnowledgeBase"
+```
+
+This links to the KB described above and should be self-explanatory.
+
+The next part describes the actions that can be used in this domain. These are not the actual actions that are described above but Petri-Net internal action definitions. These can be used in the Petri-Net and will then call either a ROS action server or a RPN action server. If ou would like to know more about atomic actions, please have a look at the documentation linked at the top of this file.
+The maine thing to notice here is they define the three key words `ros_action`, `rpn_action`, and `kb_action` that can be used to define what type of action you want to create.
+
+```yaml
+action_types:
+    BaseAction: &base_action
+        instances: *instances
+    ROSAction: &ros_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.action"
+            class:  "ROSAtomicAction"
+    RPNAction: &rpn_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.rpn_action"
+            class:  "RPNAtomicAction"
+    KBAction: &kb_action
+        <<: *base_action
+        type:
+            module: "pnp_actions.kb_action"
+            class:  "KBAction"
+```
+
+The last part called `actions` defines all the actual actions that can be performed by the net here we can find an action for each of the action servers we talked about above.
+
+```yaml
+    test_server:
+        <<: *ros_action
+        params:
+          - "value"
+        preconditions:
+          and:
+              - Exists: [LocalQuery: "value"]
+```
+
+This defines our action that is just based on the vanilla ROS SimpleActionServer described first. The server is called `test_server`. This name has to be the same as the name of the ROS node. And indeed above, we defined `rospy.init_node("test_server")`. This is how action servers are identified. By their unique name.
+We tell the Petri-Net that this is a ROS action server using `<<: *ros_action`. Next we define the parameters that this server expects in it's goal. According to our `Simpletest.action`, we only have `value`. So we only define this:
+
+```yaml
+        params:
+          - "value"
+```
+
+In reality, the params can be omitted completly and it would still work. It does, however, increase readability. Next follow optionl pre-conditions and effects. These are used to determine if the action can be executed (preconditions) and if it has to be executed/was successfully executed (effect). If the preconditions are not met, the net will fail as it cannot execute the action. If the effects are already true before the action has been started, the action will be skiped. If the effects are not true after the action has finished, the action will be executed again. These are standard behaviours that can be customised but this is a bit beyond the scope of this simple tutorial. The action here only defines preconditions:
+
+```yaml
+        preconditions:
+          and:
+              - Exists: [LocalQuery: "value"]
+```
+
+Preconditions and effects, support all standard logical operations, i.e. and, or, not, and a range of comparisosns and checks such as the `Exists` used here. So before the action will be started, the Petri-Net will query the local KB and check if there is an entry called "value". This makes sure that we can fill the goal of our `SimpleTest.action` defined above.
+
+In additiona to our vaniall ROS action, we also have our RPN action that we defined above:
+
+```yaml
+    rpn_test_server:
+        <<: *rpn_action
+        params:
+            - "value"
+        preconditions:
+            and:
+                - Exists: [LocalQuery: "value"]
+        effects:
+            and:
+                Exists: [LocalQuery: "result"]
+```
+
+This is called `rpn_test_server` which must again be the same as the name of the ROS node it is supposed to represent. It is defined as an `<<: *rpn_action` but otherwise works exactly the same aas above. The main difference is that it also defines an effect to show how this works.
+
+```yaml
+        effects:
+            and:
+                Exists: [LocalQuery: "result"]
+```
+
+Effects work the same and support the same operations as preconditions. The main difference is that effects are checked before the start of an action and after the action finishes. So in this case if the field `result` already exists in our local KB before the action is started, then we can assume that the effect has already happened that, therefore, we do not need to run the action at all. If it does not exists yet, then the action is executed. If after the action finishes, the field `result` does still not exist in the local KB, the action is restarted in the hope that running it another time will work better. Again, this might not be the smartest contingency plan but these can be mnaually defined if necessary. More on this in a later tutorial.
+
+For our example, we know that the field `result` will exist after the action has been executed because our `SimpleTest.action` has this field and our implementation of the server returns a result. Btw. just because `SimpleTest.action` has a field called `result` does not mean that we will always have this entry in the local KB. If the server fails, the result will not be returned and therefore, the entry will not be made. hence, restarting the server might fix this.
+
+finally, we have our KB action:
+
+```yaml
+    result_to_value:
+        <<: *kb_action
+        params:
+            - "operation"
+```
+
+From the name, we can alreaady imagine that it will take what ever is in `result` and save it to `value`. How it does that is defined in the plan (see below). We could define preconditions and effects for this as well but have chosen not to for the sake of space. It only has one parameter called `operation` which we will see below.
+
+
