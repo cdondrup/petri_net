@@ -443,3 +443,62 @@ A while loop defines a condition that has to be true in oder for the loop to sta
 ```
 
 this action performed a local update: `LocalUpdate: ["value", {LocalQuery: "result"}, ""]`. This translates to: "Query the local KB for `result` and save the return value in the local KB as `value`". So it basically saves `result` to `value` -> `result=value`. Hence the next loop iteration `value=6` and I am sure you can see where this is going. So all we do here is basically counting from 5 to 10. I know, not very impressive when you think about it but this is just a place holder for whatever operation you would like to perform.
+
+**Worlds**
+
+The is one final file missing, the `worlds.yaml` file found [here](rpn_recipe_planner/etc/worlds.yaml). This file simply tells the programme where to find the domain file and the plans:
+
+```yaml
+example:
+    domain: domains/domain.yaml
+    recipes:
+        - plans/example.yaml
+```
+
+Out world here is called `example` and it has exactly one plan or recipe as we call it here. Each world can have one domain file which defines all the possible actions in the world and several recipes or plans that can all be loaded at the same time. Each of these recipes will be turned into a separate ROS action server for execution. Here we only have one which our plane discussed above.
+
+### Petri-Net Execution
+
+Not the we have defined everything we need all we do is run things. First we need to start the petri-net execution framework:
+
+```
+roslaunch rpn_recipe_planner recipe_planner.launch world:=example
+```
+
+The `world` parameter tells the framework which plans to load. Once we have done so, checking the rostopics tells us that the system has created our `example_plan` action server for us:
+
+```
+/example_plan/cancel
+/example_plan/feedback
+/example_plan/goal
+/example_plan/result
+/example_plan/status
+```
+
+Now all we need to do is start our two action server that we created in the beginning:
+
+```
+rosrun rpn_recipe_planner simple_test.py
+rosrun rpn_recipe_planner test.py
+```
+
+Now everything is ready to run and we could just start the action server of our plan directly using:
+
+```
+$ rostopic pub /example_plan/goal rpn_recipe_planner_msgs/RosServerActionGoal "header:
+  seq: 0
+  stamp:
+    secs: 0
+    nsecs: 0
+  frame_id: ''
+goal_id:
+  stamp:
+    secs: 0
+    nsecs: 0
+  id: ''
+goal:
+  id: 'my_test_net'
+  params: ''" -1
+```
+
+The id here is set to `my_test_net`. This is just a name and can be whatever you like apart from the empty string as this name is used to create a host of topics and services for internal communication. The name has to be unique.
