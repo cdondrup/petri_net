@@ -138,4 +138,111 @@ self._ps.update_kb(type=RPNSimpleActionServer.UPDATE_REMOTE, attr="my_value", va
 the `type` can be `UPDATE_` followed by either `REMOTE` (global KB), `LOCAL` (local KB), `ALL` (both KBs) which are constants provided by `RPNSimpleActionServer`.
 The `attr` is the name of the field your value should be stored in. The `value` is the value you want store. This has to be of type str which is why json
 is used here. The last argument (not shown here) is called `meta_info` and can be any kind of string. this can be used to pass along additional information
-specific to your external KB
+specific to your external KB.
+
+*Querying the KB* works similar to updating it.
+
+```python
+r = self._ps.query_kb(type=RPNSimpleActionServer.QUERY_REMOTE, attr="my_value")
+```
+
+Again the `meta_info` parameter is not shown. This line of code queries the remote KB for something called `my_value`. It the returns a [`RPNQuery`](ros_petri_net_msgs/srv/RPNQuery.srv)
+object. Using the `value` field you can get a string representation of the result. This can then be loaded using json to get the actual data structure.
+
+**Knowledge Base Action**
+
+The thrid type of action possible and used here is the KB action. This action work directly on the knowledge base. So actually we wouldn't have needed the server
+described above to store out value in the external KB but we could have done that directly using a KB action. Why is this beneficial? Because we don't need to
+implement a dedicted ROS node for this but can define these directly in the domain and plan. This action will be explained in more detail later when we have 
+a look at the plan and domain files.
+
+### Knowledge Bases
+
+Having talked about them a little already, it is time to introduce the concept of the local and global/external knowledge base. Sadly, the naming convention 
+hasn't been adhered to so the global KB is sometimes also called external. Both are the same thing though.
+
+*Local KB* this KB is meant to automatically save the results and populate the goals of action servers. So in our example the `value` that is put into the action goal whe  either of the servers above is started comes from the local KB. Once the servers are finished, the `result` is saved in the local KB.
+All this happens automaticall and the user doesn't need to concern themselves with that. This is meant to allow to pass information between different actions automatically. So if the goal parameter of an action server is called the same as the resul parameter of a different action server, then the information would be passed along automatically.
+A little example, imagine you have a server `A` and a server `B`. Server `A` produces a random integer and returns it in its result message as `rnd_int`. Now server `B` is supposed to check if this random integer is odd or even. in order to do that, the goal message of server `B` has a field called `rnd_int`. Since both the output of server `A` and the input of server `B` are called the same, the local KB will take care of saving the output from `A` and passing it to the goal of `B` when it is started. Hence, the user does not need to concern themselves with having to pass the value between the servers but only needs to make sure that both parameters are called the same.
+
+This local KB only exists during the runtime of the perti-net it is associated with. It can be initilised with prior knowledge. More on this later.
+
+*Global KB* The global or external KB can be used for project specific purposes such as communication with an ontology, a dialogue system, etc. It can also be used to pass values between different actions in different petri nets or between different execution cycles of the same petri net. In contrast to the local KB, the global KB lives for the entire runtime of the Petri-Net Server. So if data is supposed to be stored persistently between runs of single nets, this can be used.
+
+The most basic implementation can be found [here](rpn_recipe_planner/src/rpn_planner_kb/rpn_planner_knowledge_base.py) and looks like this:
+
+```python
+from pnp_kb.external_knowledge_base import ExternalKnowledgeBase
+
+
+class RPKnowledgeBase(ExternalKnowledgeBase):
+    def __init__(self, net_id):
+        super(RPKnowledgeBase, self).__init__(net_id)
+
+    def query(self, variable, meta_info=None):
+        a = getattr(self, variable)
+        print "+++ QUERY +++", variable, a
+        return a
+
+    def update(self, variable, value, meta_info=None):
+        print "+++ UPDATE +++", variable, value
+        setattr(self, variable, value)
+
+```
+
+It is kept as simple as possible by extending `pnp_kb.external_knowledge_base` which provides all the technical funsitonality for communication etc. The user only has to implement two methods: query and update. You can see an example implementation above that simple staroes any value that comes in in update as a memeber variable and then retrieves and returns it in the query method. The methods are called via the functionality of the RPN Action Servers described above and should be relatively self-explanatory.
+
+### Petri-Net Definition
+
+**Domains**
+
+Petri-Nets are based on Plans and Domains. This is similar to PDDL style languages. An example domain can be found [here](rpn_recipe_planner/etc/domains/domain.yaml) and looks like this:
+
+```yaml
+instances: &instances
+    - 
+external_knowledge_base:
+    module: "rpn_planner_kb.rpn_planner_knowledge_base"
+    class:  "RPKnowledgeBase"
+action_types:
+    BaseAction: &base_action
+        instances: *instances
+    ROSAction: &ros_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.action"
+            class:  "ROSAtomicAction"
+    RPNAction: &rpn_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.rpn_action"
+            class:  "RPNAtomicAction"
+    KBAction: &kb_action
+        <<: *base_action
+        type:
+            module: "pnp_actions.kb_action"
+            class:  "KBAction"
+actions:
+    rpn_test_server:
+        <<: *rpn_action
+        params:
+            - "value"
+        preconditions:
+            and:
+                - Exists: [LocalQuery: "value"]
+        effects:
+            and:
+                Exists: [LocalQuery: "result"]
+    test_server:
+        <<: *ros_action
+        params:
+          - "value"
+        preconditions:
+          and:
+              - Exists: [LocalQuery: "value"]
+    result_to_value:
+        <<: *kb_action
+        params:
+            - "operation"
+
+```
