@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import rospy
-from rpn_recipe_planner_msgs.msg import SimpleTestAction, SimpleTestGoal
+from rpn_recipe_planner_msgs.msg import SimpleTestAction, SimpleTestResult
 from rpn_action_servers.rpn_simple_action_server import RPNSimpleActionServer
+import json
 
 
 class TestServer(object):
@@ -23,14 +24,16 @@ class TestServer(object):
         print "started"
         rospy.sleep(1.)
         print "TEST SERVER", "Saving value to external KB"
-        print "TEST SERVER", self._ps.update_kb(type=RPNSimpleActionServer.QUERY_REMOTE, attr="my_value", value=goal.value)
+        print "TEST SERVER", self._ps.update_kb(type=RPNSimpleActionServer.UPDATE_REMOTE, attr="my_value", value=json.dumps(goal.value))
         rospy.sleep(1.)
         print "TEST SERVER", "Getting value from external KB"
-        print "TEST SERVER", self._ps.query_kb(type=RPNSimpleActionServer.QUERY_REMOTE, attr="my_value")
+        r = self._ps.query_kb(type=RPNSimpleActionServer.QUERY_REMOTE, attr="my_value")
+        print "TEST SERVER", type(r), r
+        r = json.loads(r.value)
         rospy.sleep(1.)
         print "TEST SERVER", "ended"
         #  Passing the value of the goal to the result
-        self._ps.set_succeeded(goal.value)
+        self._ps.set_succeeded(SimpleTestResult(r))
 
     def preempt_cb(self, *args):
         self.run = False

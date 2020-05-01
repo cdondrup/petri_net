@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+import rospy
 from actionlib import SimpleActionServer
-from rpn_recipe_planner_msgs.msg import SimpleTestAction, SimpleTestGoal
+from rpn_recipe_planner_msgs.msg import SimpleTestAction, SimpleTestResult
 
 
 class SimpleTestServer(object):
@@ -18,7 +20,9 @@ class SimpleTestServer(object):
     def execute_cb(self, goal):
         print goal
         print "Got the value:", goal.value
-        self._ps.set_succeeded()
+        r = goal.value+1
+        print "Increasing value by 1 and returning it as result"
+        self._ps.set_succeeded(SimpleTestResult(r))
 
     def preempt_cb(self, *args):
         print "Nothing to preempt"

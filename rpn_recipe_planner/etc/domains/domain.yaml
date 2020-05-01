@@ -39,7 +39,7 @@ actions:
         preconditions:
           and:
               - Exists: [LocalQuery: "value"]
-    add_one:
+    result_to_value:
         <<: *kb_action
         params:
             - "operation"

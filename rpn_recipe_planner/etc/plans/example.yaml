@@ -1,7 +1,7 @@
-task_quiz_game:
+example_plan:
     server:
         module: "actionlib"
-        class:  "SimpleActionServer"
+        class:  "ActionServer"
     action:
         module: "rpn_recipe_planner_msgs.msg"
         class: "RosServerAction"
@@ -12,7 +12,7 @@ task_quiz_game:
         - while:
             condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}
             actions:
-                - add_one:
+                - test_server: {}
+                - result_to_value:
                     operation:
-                        LocalUpdate: ["value", {LocalQuery: "value"}+1, ""]
-        - test_server: {}
+                        LocalUpdate: ["value", {LocalQuery: "result"}, ""]

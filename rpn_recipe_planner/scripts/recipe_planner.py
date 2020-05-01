@@ -3,12 +3,11 @@
 import rospy
 from actionlib import ActionClient, ActionServer
 from actionlib_msgs.msg import GoalStatus
-from dialogue_arbiter_action.da_plugin_server import DAPluginServer
+# from dialogue_arbiter_action.da_plugin_server import DAPluginServer
 from rpn_recipe_planner_msgs.msg import RPNRecipePlannerAction
 from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryResponse
 from rpn_recipe_planner_msgs.srv import RPInform, RPInformResponse
 from ros_petri_net_msgs.msg import RPNAction, RPNGoal
-from dialogue_arbiter.msg import DialogueArbiterAction
 import json
 import yaml
 import importlib
@@ -67,7 +66,7 @@ class Server(object):
         self.rpn = {}
         self._ps = server_type(
             name,
-            ActionSpec=DialogueArbiterAction,
+            ActionSpec=getattr(importlib.import_module(plan["action"]["module"]), plan["action"]["class"]),
             goal_cb=self.goal_cb,
             auto_start=False
         )
@@ -121,18 +120,19 @@ class Server(object):
             except KeyError:
                 rospy.logwarn("No net with id '{}' currently active.".format(net_id))
 
+    # TODO: make sure that this works even without dialogue. Maybe move the DAPluginServer to petri_net
     def query_cb(self, req, net_id):
-        if isinstance(self._ps, DAPluginServer):
-            r = self._ps.query_controller(req.status, req.return_value, net_id)
-            return RPQueryResponse(r.result)
-        else:
+        # if isinstance(self._ps, DAPluginServer):
+            # r = self._ps.query_controller(req.status, req.return_value, net_id)
+            # return RPQueryResponse(r.result)
+        # else:
             raise TypeError("Only DAPluginServers support querying.")
 
     def inform_cb(self, req, net_id):
-        if isinstance(self._ps, DAPluginServer):
-            self._ps.inform_controller(req.status, req.return_value, net_id)
-            return RPInformResponse()
-        else:
+        # if isinstance(self._ps, DAPluginServer):
+            # self._ps.inform_controller(req.status, req.return_value, net_id)
+            # return RPInformResponse()
+        # else:
             raise TypeError("Only DAPluginServers support updating.")
 
 if __name__ == "__main__":

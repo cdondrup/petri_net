@@ -8,7 +8,7 @@ Created on Fri Jul 22 09:42:29 2016
 import rospy
 import rosservice
 import socket
-from dialogue_arbiter.srv import DARegisterAction, DAUnregisterAction
+# from dialogue_arbiter.srv import DARegisterAction, DAUnregisterAction
 
 
 def custom_rosservice_find(service_type):
@@ -47,22 +47,22 @@ def find_service_by_type(service_type):
             rospy.sleep(1.)
 
 
-def unregister_client(name):
-    s = rospy.ServiceProxy(find_service_by_type(DAUnregisterAction._type), DAUnregisterAction)
-    try:
-        s.wait_for_service(timeout=1.)
-        s(action_name=name)
-    except rospy.ROSException:
-        rospy.logwarn("Unregistering unsuccessful. '%s' might still be registered with server." % name)
+# def unregister_client(name):
+    # s = rospy.ServiceProxy(find_service_by_type(DAUnregisterAction._type), DAUnregisterAction)
+    # try:
+        # s.wait_for_service(timeout=1.)
+        # s(action_name=name)
+    # except rospy.ROSException:
+        # rospy.logwarn("Unregistering unsuccessful. '%s' might still be registered with server." % name)
 
 
-def register_client(name):
-    s = rospy.ServiceProxy(find_service_by_type(DARegisterAction._type), DARegisterAction)
-    try:
-        s.wait_for_service(timeout=1.)
-        s(action_name=name)
-    except rospy.ROSException:
-        rospy.logwarn("Something went horribly wrong when trying to register the '%s' client. Did the server die?" % name)
+# def register_client(name):
+    # s = rospy.ServiceProxy(find_service_by_type(DARegisterAction._type), DARegisterAction)
+    # try:
+        # s.wait_for_service(timeout=1.)
+        # s(action_name=name)
+    # except rospy.ROSException:
+        # rospy.logwarn("Something went horribly wrong when trying to register the '%s' client. Did the server die?" % name)
 
 
 def call_service(srv_name, srv_type, req):
