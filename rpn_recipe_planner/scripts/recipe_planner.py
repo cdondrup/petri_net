@@ -3,7 +3,6 @@
 import rospy
 from actionlib import ActionClient, ActionServer
 from actionlib_msgs.msg import GoalStatus
-# from dialogue_arbiter_action.da_plugin_server import DAPluginServer
 from rpn_recipe_planner_msgs.msg import RPNRecipePlannerAction
 from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryResponse
 from rpn_recipe_planner_msgs.srv import RPInform, RPInformResponse
@@ -120,13 +119,24 @@ class Server(object):
             except KeyError:
                 rospy.logwarn("No net with id '{}' currently active.".format(net_id))
 
-    # TODO: make sure that this works even without dialogue. Maybe move the DAPluginServer to petri_net
+    def __load_meta_info(meta_info):
+        meta_info = meta_info if meta_info != "" or meta_info is None else {}
+        try:
+            meta_info = json.loads(meta_info)
+        except ValueError:
+            pass
+        return meta_info
+
     def query_cb(self, req, net_id):
-        # if isinstance(self._ps, DAPluginServer):
-            # r = self._ps.query_controller(req.status, req.return_value, net_id)
-            # return RPQueryResponse(r.result)
-        # else:
-            raise TypeError("Only DAPluginServers support querying.")
+        try:
+            from dialogue_arbiter_action.da_plugin_server import DAPluginServer
+            if isinstance(self._ps, DAPluginServer):
+                meta_info = self.__load_meta_info(req.meta_info)
+                r = self._ps.query_controller(net_id, req.variable, meta_info)
+                return RPQueryResponse(r.result)
+        except ImportError as e:
+            rospy.logerr("The dialogue arbiter module does not seem to be installed. Currently")
+        raise TypeError("Only DAPluginServers support querying.")
 
     def inform_cb(self, req, net_id):
         # if isinstance(self._ps, DAPluginServer):

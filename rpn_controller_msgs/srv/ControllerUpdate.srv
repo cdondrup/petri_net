@@ -1,4 +1,5 @@
+string action
 string variable
+string value
 string meta_info
 ---
-string result

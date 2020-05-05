@@ -2,3 +2,7 @@ example:
     domain: domains/domain.yaml
     recipes:
         - plans/example.yaml
+controller:
+    domain: domains/domain.yaml
+    recipes:
+        - plans/controller_example.yaml

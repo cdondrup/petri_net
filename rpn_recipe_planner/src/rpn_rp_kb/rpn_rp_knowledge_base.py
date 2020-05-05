@@ -36,25 +36,6 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
                 l[i] = r[0].lower()
         return l
 
-    def ontology_query(self, param, onto_type="individual", onto_action="find", use_name=False):
-        t_individual = "individual"
-        t_class = "class"
-        types = (t_individual, t_class)
-
-        if onto_type not in types:
-            raise ValueError("'{}' unknown ontology type query. Must be: ({})".format(type_, ', '.join(types)))
-        if not isinstance(param, (str, unicode)):
-            raise TypeError()
-
-        param = param.lower()
-
-        r = self.call_ontology(onto_type, onto_action, param)
-        if use_name:
-            r = self.get_names(onto_type, r)
-        if len(r) == 1:
-            return r[0]
-        return r
-
     def query(self, variable, meta_info=None):
         try:
             a = getattr(self, variable)
@@ -69,13 +50,10 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
                 except:
                     pass
 
-            try:
-                return self.ontology_query(variable, **meta_info)
-            except (AttributeError, TypeError):
-                return self.user_query(variable, meta_info)
+            return self.__controller_query(variable, meta_info)
 
-    def user_query(self, variable, meta_info=None):
-        print "+++ USER QUERY +++", variable, type(variable), meta_info, type(meta_info)
+    def __controller_query(self, variable, meta_info=None):
+        print "+++ CONTROLLER QUERY +++", variable, type(variable), meta_info, type(meta_info)
         if not isinstance(variable, (str, unicode)):
             try:
                 variable = json.dumps(variable)
@@ -86,8 +64,8 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
             "/"+self.net_id.replace('-','_')+"/query",
             RPQuery,
             RPQueryRequest(
-                return_value=variable,
-                **meta_info
+                variable=variable,
+                meta_info=meta_info
             )
         )
         print r
@@ -105,8 +83,8 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
             except:
                 pass
 
-        if variable == "USER":
-            print "+++ USER UPDATE +++", variable, value, meta_info
+        if variable == "CONTROLLER":
+            print "+++ CONTROLLER UPDATE +++", variable, value, meta_info
             r = ut.call_service(
                 "/"+self.net_id.replace('-','_')+"/inform",
                 RPInform,
@@ -116,7 +94,6 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
                 )
             )
         else:
-            raise AttributeError("Other updates apart from informing the user are not supported at the moment.")
-        return None
-
+            setattr(self, variable, value)
+            print "+++ UPDATE +++", variable, value
 
