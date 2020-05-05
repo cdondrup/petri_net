@@ -8,7 +8,7 @@ Created on Fri Jul 22 09:42:29 2016
 import rospy
 import rosservice
 import socket
-# from dialogue_arbiter.srv import DARegisterAction, DAUnregisterAction
+# from dialogue_msgs.srv import DARegisterAction, DAUnregisterAction
 
 
 def custom_rosservice_find(service_type):
