@@ -60,9 +60,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_service_files(
    FILES
    RPQuery.srv
-   RPInform.srv
-   SuperQuery.srv
-   SuperInform.srv
+   RPUpdate.srv
  )
 
 ## Generate actions in the 'action' folder

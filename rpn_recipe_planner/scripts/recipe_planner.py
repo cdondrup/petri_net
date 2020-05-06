@@ -5,8 +5,9 @@ from actionlib import ActionClient, ActionServer
 from actionlib_msgs.msg import GoalStatus
 from rpn_recipe_planner_msgs.msg import RPNRecipePlannerAction
 from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryResponse
-from rpn_recipe_planner_msgs.srv import RPInform, RPInformResponse
+from rpn_recipe_planner_msgs.srv import RPUpdate, RPUpdateResponse
 from ros_petri_net_msgs.msg import RPNAction, RPNGoal
+from rpn_controller_servers.abstract_controller_plugin_server import AbstractControllerPluginServer
 import json
 import yaml
 import importlib
@@ -88,7 +89,7 @@ class Server(object):
         print self.plan
         self.services[goal.id] = [
             rospy.Service("/"+goal.id.replace('-','_')+"/query", RPQuery, lambda x: self.query_cb(x, goal.id)),
-            rospy.Service("/"+goal.id.replace('-','_')+"/inform", RPInform, lambda x: self.inform_cb(x, goal.id))
+            rospy.Service("/"+goal.id.replace('-','_')+"/update", RPUpdate, lambda x: self.update_cb(x, goal.id))
         ]
         self.goal_handles[goal.id] = gh
         self.rpn[goal.id] = self.client.send_goal(
@@ -119,7 +120,7 @@ class Server(object):
             except KeyError:
                 rospy.logwarn("No net with id '{}' currently active.".format(net_id))
 
-    def __load_meta_info(meta_info):
+    def __load_meta_info(self, meta_info):
         meta_info = meta_info if meta_info != "" or meta_info is None else {}
         try:
             meta_info = json.loads(meta_info)
@@ -128,22 +129,20 @@ class Server(object):
         return meta_info
 
     def query_cb(self, req, net_id):
-        try:
-            from dialogue_arbiter_action.da_plugin_server import DAPluginServer
-            if isinstance(self._ps, DAPluginServer):
-                meta_info = self.__load_meta_info(req.meta_info)
-                r = self._ps.query_controller(net_id, req.variable, meta_info)
-                return RPQueryResponse(r.result)
-        except ImportError as e:
-            rospy.logerr("The dialogue arbiter module does not seem to be installed. Currently")
-        raise TypeError("Only DAPluginServers support querying.")
+        if isinstance(self._ps, AbstractControllerPluginServer):
+            meta_info = self.__load_meta_info(req.meta_info)
+            r = self._ps.query_controller(net_id, req.variable, meta_info)
+            return RPQueryResponse(r.result)
+        else:
+            raise TypeError("Only instances of AbstractControllerPluginServers support querying.")
 
-    def inform_cb(self, req, net_id):
-        # if isinstance(self._ps, DAPluginServer):
-            # self._ps.inform_controller(req.status, req.return_value, net_id)
-            # return RPInformResponse()
-        # else:
-            raise TypeError("Only DAPluginServers support updating.")
+    def update_cb(self, req, net_id):
+        if isinstance(self._ps, AbstractControllerPluginServer):
+            meta_info = self.__load_meta_info(req.meta_info)
+            self._ps.inform_controller(net_id, req.variable, req.value, meta_info)
+            return RPUpdateResponse()
+        else:
+            raise TypeError("Only instances of AbstractControllerPluginServers support updates.")
 
 if __name__ == "__main__":
     rospy.init_node("recipe_planner")

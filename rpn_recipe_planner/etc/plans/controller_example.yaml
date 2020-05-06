@@ -16,3 +16,7 @@ example_plan:
                 - result_to_value:
                     operation:
                         LocalUpdate: ["value", {LocalQuery: "result"}, ""]
+        - test_action:
+            operation:
+                RemoteUpdate: ["CONTROLLER", {LocalQuery: "value"}, ""]
+

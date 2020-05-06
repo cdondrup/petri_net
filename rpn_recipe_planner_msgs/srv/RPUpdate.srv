@@ -1,5 +1,3 @@
-string net_id
-string action
 string variable
 string value
 string meta_info

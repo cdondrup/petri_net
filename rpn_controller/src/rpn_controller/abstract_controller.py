@@ -24,7 +24,7 @@ class AbstractController(object):
     def __init__(self, name):
         self.name = name
         self.loginfo(self.name, "Starting")
-        self.servers = {}
+        self.__servers = {}
         rospy.Service("~register_server", ControllerRegisterAction, self.__register_callback)
         rospy.Service("~unregister_server", ControllerUnregisterAction, self.__unregister_callback)
         rospy.Service("~query", ControllerQuery, self.query_callback)
@@ -34,13 +34,28 @@ class AbstractController(object):
     def loginfo(self, name, text):
         rospy.loginfo("[{name}]: {message}".format(name=name, message=text))
 
-    def get_goal_type(self, action_name):
+    def get_registered_server_names(self):
+        return self.__servers.keys()
+
+    def get_num_registered_servers(self):
+        return len(self.get_registered_server_names())
+
+    def get_server_client(self, name):
+        return self.__servers[name][S]
+
+    def get_server_goal_type(self, name):
+        return self.__servers[name][GT]
+
+    def get_server_goal(self, name):
+        return self.get_server_goal_type(name)()
+
+    def __get_goal_type(self, action_name):
         topic_type = rostopic._get_topic_type("/%s/goal" % action_name)[0]
         # remove "Action" string from goal type
         assert("Action" in topic_type)
         return roslib.message.get_message_class(topic_type[:-10]+"Goal")
 
-    def get_action_type(self, action_name):
+    def __get_action_type(self, action_name):
         topic_type = rostopic._get_topic_type("/%s/goal" % action_name)[0]
         # remove "Goal" string from action type
         assert("Goal" in topic_type)
@@ -49,15 +64,15 @@ class AbstractController(object):
     def __register_callback(self, req):
         name = req.action_name[1:] if req.action_name[0] == "/" else req.action_name
         rospy.loginfo("Registering '%s' action server" % name)
-        if name not in self.servers:
-            self.servers[name] = {
-                S: ActionClient(name, self.get_action_type(name)),
-                GT: self.get_goal_type(name)
+        if name not in self.__servers:
+            self.__servers[name] = {
+                S: ActionClient(name, self.__get_action_type(name)),
+                GT: self.__get_goal_type(name)
             }
             rospy.loginfo("Waiting for '%s' action server to start." % name)
-            self.servers[name][S].wait_for_server()
+            self.__servers[name][S].wait_for_server()
             rospy.loginfo("'%s' action server started." % name)
-            print self.servers
+            print self.__servers
             return ControllerRegisterActionResponse(True)
         else:
             rospy.logwarn("'%s' already registered. Won't do anything." % name)
@@ -66,8 +81,8 @@ class AbstractController(object):
     def __unregister_callback(self, req):
         name = req.action_name[1:] if req.action_name[0] == "/" else req.action_name
         rospy.loginfo("Unregistering '%s' action server" % name)
-        if name in self.servers:
-            del self.servers[name]
+        if name in self.__servers:
+            del self.__servers[name]
             return ControllerUnregisterActionResponse(True)
         else:
             rospy.logwarn("'%s' not registered. Won't do anything." % name)

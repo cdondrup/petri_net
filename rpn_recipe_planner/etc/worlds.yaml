@@ -3,6 +3,6 @@ example:
     recipes:
         - plans/example.yaml
 controller:
-    domain: domains/domain.yaml
+    domain: domains/controller_domain.yaml
     recipes:
         - plans/controller_example.yaml

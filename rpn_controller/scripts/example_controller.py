@@ -8,6 +8,7 @@ import rospy
 from rpn_controller.abstract_controller import AbstractController
 from rpn_controller_msgs.srv import ControllerQuery, ControllerQueryResponse
 from rpn_controller_msgs.srv import ControllerUpdate, ControllerUpdateResponse
+from uuid import uuid4
 
 
 class ExampleController(AbstractController):
@@ -17,18 +18,21 @@ class ExampleController(AbstractController):
     def spin(self):
         print "The controller has started"
         while not rospy.is_shutdown():
-            if len(self.servers.keys()) > 0:
-                print "The available actions are:", self.servers.keys()
+            if self.get_num_registered_servers() > 0:
+                print "The available actions are:", self.get_registered_server_names()
                 server = raw_input("Start server> ")
-                print self.servers[server]
-        rospy.sleep(1.)
+                self.get_server_client(server).wait_for_server()
+                goal = self.get_server_goal(server)
+                goal.id = str(uuid4())
+                self.get_server_client(server).send_goal(goal)
+            rospy.sleep(3.)
 
     def query_callback(self, req):
-        print req
+        print "QUERY", req
         return ControllerQueryResponse()
 
     def update_callback(self, req):
-        print req
+        print "UPDATE", req
         return ControllerUpdateResponse()
 
 

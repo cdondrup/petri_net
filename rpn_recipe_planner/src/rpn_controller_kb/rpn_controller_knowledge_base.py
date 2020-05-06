@@ -1,40 +1,13 @@
 from pnp_kb.external_knowledge_base import ExternalKnowledgeBase
 import utils as ut
 from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryRequest
-from rpn_recipe_planner_msgs.srv import RPInform, RPInformRequest
-from ontologenius.srv import OntologeniusService, OntologeniusServiceRequest
+from rpn_recipe_planner_msgs.srv import RPUpdate, RPUpdateRequest
 import json
 
 
 class RPKnowledgeBase(ExternalKnowledgeBase):
     def __init__(self, net_id):
         super(RPKnowledgeBase, self).__init__(net_id)
-        # self.shops = ["Costa", "Starbucks"]
-        self.ontology_srv = "/ontologenius/"
-        self.call_ontology("actions", "close", "")
-        # self.ontology = {
-            # "a coffee shop": self.shops,
-            # "coffee shop": self.shops
-        # }
-
-    def call_ontology(self, type_, action, param):
-        print "ONTO", type_, action, param
-        return ut.call_service(
-            self.ontology_srv+type_,
-            OntologeniusService,
-            OntologeniusServiceRequest(
-                action=action,
-                param=param
-            )
-        ).values
-
-    def get_names(self, t, l):
-        for i, e in enumerate(l):
-            r = self.call_ontology(t, "getName", e)
-            if r:
-                # l[i] = r[0].title()
-                l[i] = r[0].lower()
-        return l
 
     def query(self, variable, meta_info=None):
         try:
@@ -52,13 +25,14 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
 
             return self.__controller_query(variable, meta_info)
 
-    def __controller_query(self, variable, meta_info=None):
-        print "+++ CONTROLLER QUERY +++", variable, type(variable), meta_info, type(meta_info)
+    def __controller_query(self, variable, meta_info={}):
+        print "+++ CONTROLLER QUERY +++", variable, meta_info
         if not isinstance(variable, (str, unicode)):
             try:
                 variable = json.dumps(variable)
             except (AttributeError, TypeError) as e:
                 print e
+        meta_info = meta_info if isinstance(meta_info, (str, unicode)) else json.dumps(meta_info)
 
         r = ut.call_service(
             "/"+self.net_id.replace('-','_')+"/query",
@@ -74,23 +48,17 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
         except ValueError:
             return r.result
 
-    def update(self, variable, value, meta_info=None):
-        if meta_info is None:
-            meta_info = {}
-        else:
-            try:
-                meta_info = json.loads(meta_info)
-            except:
-                pass
-
+    def update(self, variable, value, meta_info={}):
         if variable == "CONTROLLER":
             print "+++ CONTROLLER UPDATE +++", variable, value, meta_info
+            value = value if isinstance(value, (str, unicode)) else json.dumps(value)
+            meta_info = meta_info if isinstance(meta_info, (str, unicode)) else json.dumps(meta_info)
             r = ut.call_service(
-                "/"+self.net_id.replace('-','_')+"/inform",
-                RPInform,
-                RPInformRequest(
-                    return_value=value,
-                    **meta_info
+                "/"+self.net_id.replace('-','_')+"/update",
+                RPUpdate,
+                RPUpdateRequest(
+                    value=value,
+                    meta_info=meta_info
                 )
             )
         else:

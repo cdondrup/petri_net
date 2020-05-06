@@ -53,14 +53,14 @@ class AbstractControllerPluginServer(actionlib.ActionServer, object):
     def query_service_type(self):
         return ControllerQuery
 
-    def generate_query_request(self, variable, meta_info):
-        return ControllerQueryRequest(self.__get_clean_ns(), variable, meta_info)
+    def generate_query_request(self, net_id, variable, meta_info):
+        return ControllerQueryRequest(net_id, self.__get_clean_ns(), variable, meta_info)
 
-    def query_controller(self, variable, meta_info={}):
+    def query_controller(self, net_id, variable, meta_info={}):
         return ut.call_service(
             self.query_service_name,
             self.query_service_type,
-            self.generate_query_request(variable, meta_info)
+            self.generate_query_request(net_id, variable, meta_info)
         )
 
     @property
@@ -71,13 +71,13 @@ class AbstractControllerPluginServer(actionlib.ActionServer, object):
     def update_service_type(self):
         return ControllerUpdate
 
-    def generate_update_request(self, variable, value, meta_info):
-        return ControllerUpdateRequest(self.__get_clean_ns(), variable, value, meta_info)
+    def generate_update_request(self, net_id, variable, value, meta_info):
+        return ControllerUpdateRequest(net_id, self.__get_clean_ns(), variable, value, meta_info)
 
-    def update_controller(self, variable, value=None, meta_info={}):
+    def update_controller(self, net_id, variable, value=None, meta_info={}):
         return ut.call_service(
             self.update_service_name,
             self.update_service_type,
-            self.generate_update_request(variable, value, meta_info)
+            self.generate_update_request(net_id, variable, value, meta_info)
         )
 
