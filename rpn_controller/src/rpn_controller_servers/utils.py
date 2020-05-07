@@ -35,6 +35,7 @@ def custom_rosservice_find(service_type):
                     matches.append(s)
     except socket.error:
         raise rosservice.ROSServiceIOException("Unable to communicate with master!")
+    print "MATCHES", matches
     return matches
 
 
@@ -62,10 +63,12 @@ def unregister_client(name, controller_name=""):
 
 
 def register_client(name, controller_name=""):
+    print "CONTROLLER NAME", controller_name
     if controller_name != "":
         s = rospy.ServiceProxy(controller_name+"/register_server", ControllerRegisterAction)
     else:
         s = rospy.ServiceProxy(find_service_by_type(ControllerRegisterAction._type), ControllerRegisterAction)
+    print "CONTROLLER NAME", s
     try:
         s.wait_for_service(timeout=1.)
         s(action_name=name)
@@ -78,10 +81,13 @@ def call_service(srv_name, srv_type, req, blocking=True):
     def call(srv_name, srv_type, req, queue):
         while not rospy.is_shutdown():
             try:
-                s = rospy.ServiceProxy(
-                    srv_name,
-                    srv_type
-                )
+                if srv_name == "":
+                    s = rospy.ServiceProxy(find_service_by_type(srv_type._type), srv_type)
+                else:
+                    s = rospy.ServiceProxy(
+                        srv_name,
+                        srv_type
+                    )
                 s.wait_for_service(timeout=1.)
             except rospy.ROSException:
                 rospy.logwarn("Could not communicate with '%s' service. Retrying in 1 second." % srv_name)

@@ -35,6 +35,7 @@ class AbstractControllerPluginServer(actionlib.ActionServer, object):
         return
 
     def get_controller_name(self):
+        if self.controller_name == "": return self.controller_name
         return self.controller_name if self.controller_name.startswith("/") else "/"+self.controller_name
 
     def start(self):
@@ -47,7 +48,7 @@ class AbstractControllerPluginServer(actionlib.ActionServer, object):
 
     @property
     def query_service_name(self):
-        return self.get_controller_name()+"/query"
+        return self.get_controller_name()+"/query" if self.controller_name != "" else ""
 
     @property
     def query_service_type(self):
@@ -65,7 +66,7 @@ class AbstractControllerPluginServer(actionlib.ActionServer, object):
 
     @property
     def update_service_name(self):
-        return self.get_controller_name()+"/update"
+        return self.get_controller_name()+"/update" if self.controller_name != "" else ""
 
     @property
     def update_service_type(self):
