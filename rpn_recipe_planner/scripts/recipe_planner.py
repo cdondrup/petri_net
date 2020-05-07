@@ -121,7 +121,6 @@ class Server(object):
                 rospy.logwarn("No net with id '{}' currently active.".format(net_id))
 
     def __load_meta_info(self, meta_info):
-        meta_info = meta_info if meta_info != "" or meta_info is None else {}
         try:
             meta_info = json.loads(meta_info)
         except ValueError:
@@ -130,16 +129,15 @@ class Server(object):
 
     def query_cb(self, req, net_id):
         if isinstance(self._ps, AbstractControllerPluginServer):
-            meta_info = self.__load_meta_info(req.meta_info)
-            r = self._ps.query_controller(net_id, req.variable, meta_info)
+            # meta_info = self.__load_meta_info(req.meta_info)
+            r = self._ps.query_controller(net_id, req.variable, req.meta_info)
             return RPQueryResponse(r.result)
         else:
             raise TypeError("Only instances of AbstractControllerPluginServers support querying.")
 
     def update_cb(self, req, net_id):
         if isinstance(self._ps, AbstractControllerPluginServer):
-            meta_info = self.__load_meta_info(req.meta_info)
-            self._ps.inform_controller(net_id, req.variable, req.value, meta_info)
+            self._ps.update_controller(net_id, req.variable, req.value, req.meta_info)
             return RPUpdateResponse()
         else:
             raise TypeError("Only instances of AbstractControllerPluginServers support updates.")

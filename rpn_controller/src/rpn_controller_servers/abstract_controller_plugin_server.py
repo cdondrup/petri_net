@@ -43,11 +43,11 @@ class AbstractControllerPluginServer(actionlib.ActionServer, object):
         rospy.on_shutdown(lambda: ut.unregister_client(self.ns, self.get_controller_name()))
 
     def __get_clean_ns(self):
-        return self.ns[1:] if self.ns.startswith("/") else self.ns,
+        return self.ns[1:] if self.ns.startswith("/") else self.ns
 
     @property
     def query_service_name(self):
-        return self.get_controller_name+"/query"
+        return self.get_controller_name()+"/query"
 
     @property
     def query_service_type(self):
@@ -72,6 +72,8 @@ class AbstractControllerPluginServer(actionlib.ActionServer, object):
         return ControllerUpdate
 
     def generate_update_request(self, net_id, variable, value, meta_info):
+        a = self.__get_clean_ns()
+        print self.ns, type(self.ns), a, type(a)
         return ControllerUpdateRequest(net_id, self.__get_clean_ns(), variable, value, meta_info)
 
     def update_controller(self, net_id, variable, value=None, meta_info={}):

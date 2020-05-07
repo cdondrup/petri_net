@@ -19,4 +19,7 @@ example_plan:
         - test_action:
             operation:
                 RemoteUpdate: ["CONTROLLER", {LocalQuery: "value"}, ""]
+        - test_action:
+            operation:
+                RemoteQuery: ["CONTROLLER", ""]
 

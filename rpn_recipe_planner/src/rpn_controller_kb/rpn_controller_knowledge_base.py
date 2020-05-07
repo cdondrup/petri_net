@@ -42,7 +42,7 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
                 meta_info=meta_info
             )
         )
-        print r
+        print "+++ CONTROLLER REPLY:", r
         try:
             return json.loads(r.result)
         except ValueError:
@@ -53,6 +53,7 @@ class RPKnowledgeBase(ExternalKnowledgeBase):
             print "+++ CONTROLLER UPDATE +++", variable, value, meta_info
             value = value if isinstance(value, (str, unicode)) else json.dumps(value)
             meta_info = meta_info if isinstance(meta_info, (str, unicode)) else json.dumps(meta_info)
+            print type(value), type(meta_info)
             r = ut.call_service(
                 "/"+self.net_id.replace('-','_')+"/update",
                 RPUpdate,

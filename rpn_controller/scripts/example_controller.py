@@ -29,7 +29,9 @@ class ExampleController(AbstractController):
 
     def query_callback(self, req):
         print "QUERY", req
-        return ControllerQueryResponse()
+        # Do something fancy here to generate the data such as asking the user about their opinion etc.
+        result = "my awesome resut"
+        return ControllerQueryResponse(result)
 
     def update_callback(self, req):
         print "UPDATE", req
