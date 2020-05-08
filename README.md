@@ -503,3 +503,472 @@ goal:
 The `id` here is set to `my_test_net`. This is just a name and can be whatever you like apart from the empty string as this name is used to create a host of topics and services for internal communication. The name has to be unique. A video of the execution can be found here: https://youtu.be/MouAW1H-CaQ.
 
 The execution of the net is almost instantaneously the only thing that takes time is the very first action server as it has several sleep statements in it.
+
+
+## Using a controller
+
+The Petri-Net can be used with an external controller that starts tasks and keeps track of them. This is interesting when thinking about a system that would be able to start tasks. This could be a dialogue system or an external scheduler. The Petri-Net repository contains an abstract controller that you can base your conterller on. There is also a basic example controller that we will have a look at here to show how this could work.
+
+### The controller
+
+The `AbstractController` which can be found [here](rpn_controller/src/rpn_controller/abstract_controller.py) contains the functionality required to create your own controller. Documentation can be found following the link in the top of this document. The main functionality of the controller is to manage the currently available and running Petri-Nets and to provide functionality to send and recieve information from/to a specific net. For taking care of the running Petri-Nets, the controller provides information on the available nets. To this end, the abstract controller works in conjunction with a specialised action server which will be descrined below. The other major functionality of the server is to exchange data. For this the thing to do is to override the abstract `query_callback` and `update_callback` methods. These methods are called if a component wants to update the controller or requires information that the controller can provide.
+
+Let's have a look at the example controller which can be found [here](rpn_controller/scripts/example_controller.py):
+
+```python
+import rospy
+from rpn_controller.abstract_controller import AbstractController
+from rpn_controller_msgs.srv import ControllerQuery, ControllerQueryResponse
+from rpn_controller_msgs.srv import ControllerUpdate, ControllerUpdateResponse
+from uuid import uuid4
+
+
+class ExampleController(AbstractController):
+    def __init__(self, name):
+        super(ExampleController, self).__init__(name)
+
+    def spin(self):
+        print "The controller has started"
+        while not rospy.is_shutdown():
+            if self.get_num_registered_servers() > 0:
+                print "The available actions are:", self.get_registered_server_names()
+                server = raw_input("Start server> ")
+                self.get_server_client(server).wait_for_server()
+                goal = self.get_server_goal(server)
+                goal.id = str(uuid4())
+                self.get_server_client(server).send_goal(goal)
+            rospy.sleep(3.)
+
+    def query_callback(self, req):
+        print "QUERY", req
+        # Do something fancy here to generate the data such as asking the user about their opinion etc.
+        result = "my awesome resut"
+        return ControllerQueryResponse(result)
+
+    def update_callback(self, req):
+        print "UPDATE", req
+        return ControllerUpdateResponse()
+
+```
+
+This example shows a very simple implementation of such a controller. The query and update methods simply print the service requests sent and the query just always returns the same hard coded string. These methods are very specific to the actual use case of your system so the their functionality is left to the user to implement. As mentioned above, the servers register them selves with the controller so the controller knows which servers are available. The currently registered severs can be accessed via their names. To retieve the names of all the registered severs you can use the `get_registered_server_names()` method which returnes a list of names. With `get_num_registered_servers()` you can get the length of this list. 
+
+**Starting a server**
+
+The main functionality of a controller is of course controlling the servers. The way in wich the servers are controlled here is using the ROS action server methods. The `get_server_client(server)` returns a ROS action client where the `server` argument is the name of the server form the list obtained via the `get_registered_server_names()`. This action client supports all the standard functionality of a ROS action client.
+
+In order to create the goal to send to the server, you can use the `get_server_goal(server)` which returns an object of the type of the goal required by the server in question. Again `server` is the name of the server you would like to get the goal for and should be the same as the one you use to call `get_server_client(server)`. If you require only the type of the goal but not the actual goal object, you can use the `get_server_goal_type(server)` method.
+
+Hence, the easiest way of starting a server is:
+
+```python
+                self.get_server_client(server).wait_for_server()
+                goal = self.get_server_goal(server)
+                goal.id = str(uuid4())
+                self.get_server_client(server).send_goal(goal)
+```
+
+### The controller plugin server
+
+In oder to provide all the functionality the controller provides, we need to use a specific type of ROS action server that automatically registers itself with the controller and provides functionality to call the query and update methods using ROS services. This type of server can be found [here](rpn_controller/src/rpn_controller_servers/abstract_controller_plugin_server.py) and extends the ROS action server. The simple action server is not supported yet. 
+
+```python
+...
+import utils as ut
+from rpn_recipe_planner_msgs.msg import RosServerAction
+from rpn_controller_msgs.srv import ControllerQuery, ControllerQueryRequest
+from rpn_controller_msgs.srv import ControllerUpdate, ControllerUpdateRequest
+
+
+class AbstractControllerPluginServer(actionlib.ActionServer, object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self, ns, ActionSpec=RosServerAction, goal_cb=None, cancel_cb=actionlib.nop_cb, auto_start=True):
+        if goal_cb is None:
+            raise AttributeError("goal_cb has to be specified")
+        self.ns = ns
+        super(AbstractControllerPluginServer, self).__init__(
+            ns=ns,
+            ActionSpec=ActionSpec,
+            goal_cb=goal_cb,
+            cancel_cb=cancel_cb,
+            auto_start=auto_start
+        )
+
+    @abstractproperty
+    def controller_name(self):
+        return
+
+    def get_controller_name(self):
+        if self.controller_name == "": return self.controller_name
+        return self.controller_name if self.controller_name.startswith("/") else "/"+self.controller_name
+
+    def start(self):
+        super(AbstractControllerPluginServer, self).start()
+        ut.register_client(self.ns, self.get_controller_name())
+        rospy.on_shutdown(lambda: ut.unregister_client(self.ns, self.get_controller_name()))
+
+    def __get_clean_ns(self):
+        return self.ns[1:] if self.ns.startswith("/") else self.ns
+
+    @property
+    def query_service_name(self):
+        return self.get_controller_name()+"/query" if self.controller_name != "" else ""
+
+    @property
+    def query_service_type(self):
+        return ControllerQuery
+
+    def generate_query_request(self, net_id, variable, meta_info):
+        return ControllerQueryRequest(net_id, self.__get_clean_ns(), variable, meta_info)
+
+    def query_controller(self, net_id, variable, meta_info={}):
+        return ut.call_service(
+            self.query_service_name,
+            self.query_service_type,
+            self.generate_query_request(net_id, variable, meta_info)
+        )
+
+    @property
+    def update_service_name(self):
+        return self.get_controller_name()+"/update" if self.controller_name != "" else ""
+
+    @property
+    def update_service_type(self):
+        return ControllerUpdate
+
+    def generate_update_request(self, net_id, variable, value, meta_info):
+        a = self.__get_clean_ns()
+        print self.ns, type(self.ns), a, type(a)
+        return ControllerUpdateRequest(net_id, self.__get_clean_ns(), variable, value, meta_info)
+
+    def update_controller(self, net_id, variable, value=None, meta_info={}):
+        return ut.call_service(
+            self.update_service_name,
+            self.update_service_type,
+            self.generate_update_request(net_id, variable, value, meta_info)
+        )
+
+```
+
+This class is abstract and requires the user to override the `controller_name(self)` property. This should meerly return a strind with the ROS namespace of the controller. The two most important methods here are `query_controller(self, net_id, variable, meta_info={})` and `update_controller(self, net_id, variable, value=None, meta_info={})` which should be self-explenatory based on the explanation of knowledge bases above.
+
+This server makes use of the methods in the `utils.py` file found [here](rpn_controller/src/rpn_controller_servers/utils.py).
+
+**The basic server**
+
+The simplest implementation of a server is the basic server [here]():
+
+```python
+import rospy
+import actionlib
+from rpn_recipe_planner_msgs.msg import RosServerAction
+from rpn_controller_servers.abstract_controller_plugin_server import AbstractControllerPluginServer
+
+
+class BasicControllerPluginServer(AbstractControllerPluginServer):
+    def __init__(self, ns, controller_name="", ActionSpec=RosServerAction, goal_cb=None, cancel_cb=actionlib.nop_cb, auto_start=True):
+        super(BasicControllerPluginServer, self).__init__(ns, ActionSpec, goal_cb, cancel_cb, auto_start)
+        self.__cn = rospy.get_param("rpn_controller_name", controller_name)
+        print "GOT CONTROLLER NAME AS:", self.__cn
+
+    @property
+    def controller_name(self):
+        return self.__cn
+
+```
+
+All this implementation of the abstract server does is override the abstract property `controller_name` which will either return the name passed in to the constructor, read from the global ROS param `rpn_controller_name` or `""` if none of them has been specified. If `""` is returned the server will try to determine the name of the controller automatically. This is a convenience method that works well as long as all the ROS nodes run on the same PC. As soon as the nodes are distributed over a network, this method gets to slow for practical use. Hence, it is recommended to specify the controller name manually where possible.
+
+This server can now be used like any other ROS action server so we will use it in the following example.
+
+###The controller knowledge base
+
+In order to communicate with the controller, we will a use a different knowledge base implementation. As we have seen above, the external knowledge base can be customised to fit the need of the users. Initially, we went with a very simple implementation that just stores values given a name. Now we want to be able to not just do that but to also communicate with the controller if we choose to do so. For this purpose, we created the `rpn_controller_knowledge_base.py` wich can be found [here](rpn_recipe_planner/src/rpn_controller_kb/rpn_controller_knowledge_base.py) and looks like this:
+
+```python
+from pnp_kb.external_knowledge_base import ExternalKnowledgeBase
+import utils as ut
+from rpn_recipe_planner_msgs.srv import RPQuery, RPQueryRequest
+from rpn_recipe_planner_msgs.srv import RPUpdate, RPUpdateRequest
+import json
+
+
+class RPKnowledgeBase(ExternalKnowledgeBase):
+    def __init__(self, net_id):
+        super(RPKnowledgeBase, self).__init__(net_id)
+
+    def query(self, variable, meta_info=None):
+        try:
+            a = getattr(self, variable)
+            print "+++ QUERY +++", variable, a
+            return a
+        except (AttributeError, TypeError):
+            if meta_info is None:
+                meta_info = {}
+            else:
+                try:
+                    meta_info = json.loads(meta_info)
+                except:
+                    pass
+
+            return self.__controller_query(variable, meta_info)
+
+    def __controller_query(self, variable, meta_info={}):
+        print "+++ CONTROLLER QUERY +++", variable, meta_info
+        if not isinstance(variable, (str, unicode)):
+            try:
+                variable = json.dumps(variable)
+            except (AttributeError, TypeError) as e:
+                print e
+        meta_info = meta_info if isinstance(meta_info, (str, unicode)) else json.dumps(meta_info)
+
+        r = ut.call_service(
+            "/"+self.net_id.replace('-','_')+"/query",
+            RPQuery,
+            RPQueryRequest(
+                variable=variable,
+                meta_info=meta_info
+            )
+        )
+        print "+++ CONTROLLER REPLY:", r
+        try:
+            return json.loads(r.result)
+        except ValueError:
+            return r.result
+
+    def update(self, variable, value, meta_info={}):
+        if variable == "CONTROLLER":
+            print "+++ CONTROLLER UPDATE +++", variable, value, meta_info
+            value = value if isinstance(value, (str, unicode)) else json.dumps(value)
+            meta_info = meta_info if isinstance(meta_info, (str, unicode)) else json.dumps(meta_info)
+            print type(value), type(meta_info)
+            r = ut.call_service(
+                "/"+self.net_id.replace('-','_')+"/update",
+                RPUpdate,
+                RPUpdateRequest(
+                    value=value,
+                    meta_info=meta_info
+                )
+            )
+        else:
+            setattr(self, variable, value)
+            print "+++ UPDATE +++", variable, value
+
+```
+
+This implementation also extends the `ExternalKnowledgeBase` and provides the same functionality regarding storing and retrieval. In the query method, it tries to get and return the requested variable value and only if it can't will call the controller using: `__controller_query(self, variable, meta_info={})`. The magic block of code to achieve this is:
+
+```python
+        r = ut.call_service(
+            "/"+self.net_id.replace('-','_')+"/query",
+            RPQuery,
+            RPQueryRequest(
+                variable=variable,
+                meta_info=meta_info
+            )
+        )
+```
+
+Let's have a look at that in a bit more detail. It uses a method from the `utils.py` file [here](rpn_recipe_planner/src/rpn_controller_kb/utils.py) called `call_service(srv_name, srv_type, req)` which take care of creating the service proxy, waiting for the service to become active and then calls it. If there is a exception, it will retry the service call after one second. The most interesting statement in the piece of code above is the generation of the service name. As you can see from this line: `"/"+self.net_id.replace('-','_')+"/query"` the service name is not fixed but depends on the `net_id` which is the unique identifyer given to any net on start up. This allows for the parallel execution of the same net several times because the controller can unambiuously identify the instance of the net and the action inside the net that tries to communicate with it.
+
+Just imagine the following scenario: I start the net and query the controller. This query relies on user input and therefore effectively pauses the execution of the net until the user has provided the requrired data. In the meantime, another process started the same net again. Now this net is running and reaches the same point where it is waiting for user input. Since both nets might have been started with differing initial knowledge, the question to the user might be different despite it being asked by the same action. Now if the user answers any one of the questions the controller needs to know which instance of the net/action to send the answer to. Since we use the net id as the service name, each action has a dedicated service to receive the reply on so there will be no confusion.
+
+The udate request works a little differently. Here we explicitly trigger communication with the controller. This is done via the variable name. If the variable is called `CONTROLLER` (`if variable == "CONTROLLER":`), the knowledge base immediately forwards the update to the controller. Otherwise, the value given is stored in the knowledge base directly as before.
+
+All of this is done automatically by the knowledge base and the plugin server described above. So there is no need for the programmer to be involved in this. It just works in the background. How all of this actually is explained below.
+
+
+###Controller usage example
+
+We will build on the example used above and extend it to use our basic controlller.
+
+**The domain file**
+
+We will updata the domain file used above to include a new knowledge base action that will commuictate with the controller. The new domain file called `controller_domain.yaml` can be found [here](rpn_recipe_planner/etc/domains/controller_domain.yaml) and looks like this:
+
+```python
+instances: &instances
+    - 
+external_knowledge_base:
+    module: "rpn_controller_kb.rpn_controller_knowledge_base"
+    class:  "RPKnowledgeBase"
+action_types:
+    BaseAction: &base_action
+        instances: *instances
+    ROSAction: &ros_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.action"
+            class:  "ROSAtomicAction"
+    RPNAction: &rpn_action
+        <<: *base_action
+        type:
+            module: "rpn_ros_interface.rpn_action"
+            class:  "RPNAtomicAction"
+    KBAction: &kb_action
+        <<: *base_action
+        type:
+            module: "pnp_actions.kb_action"
+            class:  "KBAction"
+actions:
+    rpn_test_server:
+        <<: *rpn_action
+        params:
+            - "value"
+        preconditions:
+            and:
+                - Exists: [LocalQuery: "value"]
+        effects:
+            and:
+                Exists: [LocalQuery: "result"]
+    test_server:
+        <<: *ros_action
+        params:
+          - "value"
+        preconditions:
+          and:
+              - Exists: [LocalQuery: "value"]
+    result_to_value:
+        <<: *kb_action
+        params:
+            - "operation"
+    test_action:
+        <<: *kb_action
+        params:
+            - "operation"
+```
+
+The only two differences to the domain file above for the simple example is that we are using our new knowledge base:
+
+```python
+external_knowledge_base:
+    module: "rpn_controller_kb.rpn_controller_knowledge_base"
+    class:  "RPKnowledgeBase"
+```
+
+And that we added a new action:
+
+```python
+    test_action:
+        <<: *kb_action
+        params:
+            - "operation"
+```
+
+**The plan file**
+
+The plan file `controller_example.yaml` can be found [here](rpn_recipe_planner/etc/plans/controller_example.yaml) and looks like this:
+
+```python
+example_plan:
+    server:
+        module: "rpn_controller_servers.basic_controller_plugin_server"
+        class:  "BasicControllerPluginServer"
+    action:
+        module: "rpn_recipe_planner_msgs.msg"
+        class: "RosServerAction"
+    initial_knowledge:
+        value: 5
+    plan:
+        - rpn_test_server: {}
+        - while:
+            condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}
+            actions:
+                - test_server: {}
+                - result_to_value:
+                    operation:
+                        LocalUpdate: ["value", {LocalQuery: "result"}, ""]
+        - test_action:
+            operation:
+                RemoteUpdate: ["CONTROLLER", {LocalQuery: "value"}, ""]
+        - test_action:
+            operation:
+                RemoteQuery: ["CONTROLLER", ""]
+
+```
+
+The only two differences between this new file and the one initially used are that we are now using our new basic controller plugin described above:
+
+```python
+    server:
+        module: "rpn_controller_servers.basic_controller_plugin_server"
+        class:  "BasicControllerPluginServer"
+```
+
+This means that the plan will not be turned into a ROS action server but it will become a `BasicControllerPluginServer`. Hence this will automaticallt register itself with the controller and be therefore maintained by it.
+
+We also added two instances of the `test_action` that we difined earlier:
+
+```python
+        - test_action:
+            operation:
+                RemoteUpdate: ["CONTROLLER", {LocalQuery: "value"}, ""]
+        - test_action:
+            operation:
+                RemoteQuery: ["CONTROLLER", ""]
+```
+
+The first one will update the controller with the value of `value` after the loop has finished and the second one will query something form the controller. In both occasions the `meta_info` field has been omitted but could be used to transmit additional information to the controller. In the case of the query, the variable name also has been set to `""` as it doesn't really matter here. This should of course be changed for any propper implementation.
+
+**The worlds file**
+
+The final thing we have to change is the [`worlds.yaml`](rpn_recipe_planner/etc/worlds.yaml) file to include our new domain and plan file:
+
+```python
+example:
+    domain: domains/domain.yaml
+    recipes:
+        - plans/example.yaml
+controller:
+    domain: domains/controller_domain.yaml
+    recipes:
+        - plans/controller_example.yaml
+```
+
+Now if we start our recipe planner with `world:=controller` it will load the new files.
+
+###Note
+
+The plugin server shown here is only used for the plan file. You do not need to use it for the actions. For an action to comminicate with the controller it can simply use the query and update methods provided by the [`RPNActionServer`](ros_petri_net/src/rpn_action_servers/rpn_action_server.py). The controller plugin server should only be used for things that are directly started by the controller. Actions are started by the net instead.
+
+###Running thr controller example
+
+**You have to run the controller first.** There is currently no functionalty to retry the registration of a server more than once. This has been disabled as it led to problems along the way.
+
+**Starting the controller**
+
+This a simple as running any other ROS node:
+
+```
+rosrun rpn_controller example_controller.py
+```
+
+**Starting the recipe planner**
+
+Same as berfore but using a different world:
+
+```
+roslaunch rpn_recipe_planner recipe_planner.launch world:=controller
+```
+
+Once this has started you should see that it registers with the controller  via the print outs on the terminal.
+
+**Starting the actions**
+
+Same as before:
+
+```
+rosrun rpn_recipe_planner simple_test.py
+rosrun rpn_recipe_planner test.py
+```
+
+In the input prompt of the controller write:
+
+```
+Start server> example_plan
+```
+
+which is the name of our net. Once the net has finished, you should see the output of the controller update and query printed to the terminal.
+
+A video showing how this all works can be found here: https://youtu.be/hcvYERSpIp8
