@@ -6,3 +6,7 @@ controller:
     domain: domains/controller_domain.yaml
     recipes:
         - plans/controller_example.yaml
+alana:
+    domain: domains/domain.yaml
+    recipes:
+        - plans/alana_example.yaml

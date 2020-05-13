@@ -1,0 +1,18 @@
+task_robot_dance:
+    server:
+        module: "dialogue_arbiter_action.da_plugin_server"
+        class:  "DAPluginServer"
+    action:
+        module: "rpn_recipe_planner_msgs.msg"
+        class: "RosServerAction"
+    initial_knowledge:
+        value: 5
+    plan:
+        - rpn_test_server: {}
+        - while:
+            condition: {Comparison: ["ne", [LocalQuery: "value", 10]]}
+            actions:
+                - test_server: {}
+                - result_to_value:
+                    operation:
+                        LocalUpdate: ["value", {LocalQuery: "result"}, ""]
