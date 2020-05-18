@@ -41,6 +41,7 @@ class RemoteQuery(AbstractAtomicQuery):
 
 class Query(AbstractAtomicQuery):
     def _run(self, kb, external_kb):
-        r = kb.query(self._call_op(self.attr, kb, external_kb))
-        return r if r is not None else external_kb.query(self._call_op(self.attr, kb, external_kb), self.meta_info)
+        attr = self._call_op(self.attr, kb, external_kb)
+        r = kb.query(attr, self.meta_info)
+        return r if r is not None else external_kb.query(attr, self.meta_info)
 
