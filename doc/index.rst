@@ -6,6 +6,18 @@
 Welcome to Petri Net Machines's documentation!
 ==============================================
 
+Tutorials
+===============
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+   
+   usage
+
+Documentation
+===============
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
