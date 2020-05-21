@@ -91,6 +91,7 @@ class Server(object):
             rospy.Service("/"+goal.id.replace('-','_')+"/query", RPQuery, lambda x: self.query_cb(x, goal.id)),
             rospy.Service("/"+goal.id.replace('-','_')+"/update", RPUpdate, lambda x: self.update_cb(x, goal.id))
         ]
+        print "SERVICES:", self.services
         self.goal_handles[goal.id] = gh
         self.rpn[goal.id] = self.client.send_goal(
             RPNGoal(

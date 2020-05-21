@@ -47,4 +47,16 @@ actions:
         <<: *kb_action
         params:
             - "operation"
+    say:
+        <<: *kb_action
+        params:
+            - "operation"
+    quiz_load_questions:
+        <<: *ros_action
+        params:
+            -
+    quiz_run_question:
+        <<: *rpn_action
+        params:
+            - "question_array"
 

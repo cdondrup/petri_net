@@ -7,6 +7,7 @@ controller:
     recipes:
         - plans/controller_example.yaml
 alana:
-    domain: domains/domain.yaml
+    domain: domains/controller_domain.yaml
     recipes:
         - plans/alana_example.yaml
+        - plans/quiz.yaml
