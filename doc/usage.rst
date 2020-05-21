@@ -451,6 +451,9 @@ We will updata the domain file used above to include a new knowledge base action
 
 .. literalinclude:: ../rpn_recipe_planner/etc/domains/controller_domain.yaml
   :language: YAML
+  :lines: 1-49
+
+**Note:** The actual file on the repository contains more actions that are used in more advanced examples and which will not be considered here.
 
 The only two differences to the domain file above for the simple example is that we are using our new knowledge base:
 
