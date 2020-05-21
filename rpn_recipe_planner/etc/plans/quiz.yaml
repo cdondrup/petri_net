@@ -1,0 +1,28 @@
+task_quiz_game:
+    server:
+        module: "dialogue_arbiter_action.da_plugin_server"
+        class:  "DAPluginServer"
+    action:
+        module: "rpn_recipe_planner_msgs.msg"
+        class: "RosServerAction"
+    initial_knowledge:
+        score: "0"
+        running: true
+    plan:
+        - say:
+            operation:
+                RemoteUpdate: ["CONTROLLER", "", {"status": "verbalisation.greeting"}]
+        - quiz_load_questions: {}
+        - say:
+            operation:
+                RemoteUpdate: ["CONTROLLER", "", {"status": "verbalisation.explanation"}]
+        - while:
+            condition: {Comparison: ["eq", [LocalQuery: "running", true]]}
+            actions:
+                - quiz_run_question: {}
+                - say:
+                    operation:
+                        RemoteUpdate: ["CONTROLLER", "", {"status": "verbalisation.move_on"}]
+        - say:
+            operation:
+                RemoteUpdate: ["CONTROLLER", "", {"status": "verbalisation.final", "return_value": {LocalQuery: "score"}}]
