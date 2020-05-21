@@ -1,0 +1,4 @@
+<launch>
+  <node name="rpn_test_server" pkg="rpn_recipe_planner" type="test.py" output="screen" respawn="true"/>
+  <node name="test_server" pkg="rpn_recipe_planner" type="simple_test.py" output="screen" respawn="true"/>
+</launch>
