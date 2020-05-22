@@ -13,6 +13,13 @@ class AbstractAtomicQuery(object):
     def _run(self, kb, external_kb):
         return
 
+    def _resolve_meta_info(self, kb, external_kb):
+        try:
+            for k in self.meta_info.keys():
+                self.meta_info[k] = self._call_op(self.meta_info[k], kb, external_kb)
+        except AttributeError:
+            pass
+
     def _call_op(self, op, kb, external_kb):
         try:
             return op(kb, external_kb)
@@ -20,6 +27,7 @@ class AbstractAtomicQuery(object):
             return op
 
     def __call__(self, kb, external_kb):
+        self._resolve_meta_info(kb, external_kb)
         return self._run(kb, external_kb)
 
     def __str__(self):
