@@ -65,6 +65,15 @@ PNP Knowledge Bases
 		:return: The result of :meth:`~pnp_kb.abstract_knowledgebase.AbstractKnowledgeBase.update`. Normally, ``None``.
 		:rtype: str
 
+	.. method:: _resolve_meta_info(kb, external_kb)
+
+		Using :meth:`_call_op`, this method evaluates every entry in the ``meta_info`` :class:`dict` in cases it contains a nested query that needs to be resolved first.
+
+		:param kb: The local knowldege base implementation. Normally just uses the default implementation :class:`~pnp_kb.knowledgebase.KnowledgeBase`.
+		:type kb: :class:`~pnp_kb.abstract_knowledgebase.AbstractKnowledgeBase`
+		:param external_kb: The global knowldege base implementation.
+		:type external_kb: :class:`~pnp_kb.external_knowledge_base.ExternalKnowledgeBase`
+
 	.. method:: _call_op(op, kb, external_kb)
 
 		Convenience method that calls a given :class:`pnp_gen.operations.Operation` or :class:`AbstractAtomicQuery`. This allows to recursively run queries by resolving a query for the value first before running the update. An example of this can be found in the implementation of :class:`LocalUpdate` 's ``_run`` method.
@@ -82,11 +91,11 @@ PNP Knowledge Bases
 
 	Inherits from :class:`AbstractAtomicUpdate`. Overrides the :meth:`AbstractAtomicUpdate._run` method to update the knowledge base passed in as ``kb``. Uses :meth:`AbstractAtomicUpdate._call_op` to resolve any possible operations or nested queries before updating the knowledge base.
 
-.. class:: RemoteQuery
+.. class:: RemoteUpdate
 
 	Inherits from :class:`AbstractAtomicUpdate`. Overrides the :meth:`AbstractAtomicUpdate._run` method to update the knowledge base passed in as ``external_kb``. Uses :meth:`AbstractAtomicUpdate._call_op` to resolve any possible operations or nested queries before updating the knowledge base.
 
-.. class:: Query
+.. class:: Update
 
 	Inherits from :class:`AbstractAtomicUpdate`. Overrides the :meth:`AbstractAtomicUpdate._run` method to update both the knowledge base passed in as ``kb`` first and the ``external_kb``. Uses :meth:`AbstractAtomicUpdate._call_op` to resolve any possible operations or nested queries before updating the knowledge bases.
 
@@ -110,6 +119,15 @@ PNP Knowledge Bases
 		:type external_kb: :class:`~pnp_kb.external_knowledge_base.ExternalKnowledgeBase`
 		:return: The result of :meth:`~pnp_kb.abstract_knowledgebase.AbstractKnowledgeBase.query`
 		:rtype: str
+
+	.. method:: _resolve_meta_info(kb, external_kb)
+
+		Using :meth:`_call_op`, this method evaluates every entry in the ``meta_info`` :class:`dict` in cases it contains a nested query that needs to be resolved first.
+
+		:param kb: The local knowldege base implementation. Normally just uses the default implementation :class:`~pnp_kb.knowledgebase.KnowledgeBase`.
+		:type kb: :class:`~pnp_kb.abstract_knowledgebase.AbstractKnowledgeBase`
+		:param external_kb: The global knowldege base implementation.
+		:type external_kb: :class:`~pnp_kb.external_knowledge_base.ExternalKnowledgeBase`
 
 	.. method:: _call_op(op, kb, external_kb)
 

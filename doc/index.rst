@@ -3,30 +3,41 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Petri Net Machines's documentation!
+Petri Net Machines
 ==============================================
 
-Tutorials
-===============
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-   
-   usage
+Petri-Net Machines (PNM) for the Robot Operating System (ROS) are an alternative to statemachines. They have been designed to allow seemes and easy to use execution of sequences of (concurrent) actions. These actions are mainly ROS action servers which can simply be hooked into the system. This page introduces the functionality of PNMs and provides documentation. More info can be found here: https://arxiv.org/pdf/1909.06174.
 
 Documentation
 ===============
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Tutorials:
+
+   usage
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Petri-Net Plans API:
 
    pnp_actions
    pnp_common
    pnp_kb
    pnp_gen
    pnp_execution
+
+.. toctree::
+   :maxdepth: 2
+   :caption: ROS Petri-Net API:
+
+   rpn_action_servers
+
+.. toctree::
+   :maxdepth: 2
+   :caption: RPN Recipe Planner API:
+
+   rpn_controller_kb
 
 
 
